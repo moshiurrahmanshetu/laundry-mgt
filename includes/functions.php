@@ -393,6 +393,86 @@ function generate_payment_number(?PDO $pdo = null): string {
 }
 
 /**
+ * Generate unique sequential pickup or delivery reference number (e.g. PU-000001 or DL-000001)
+ *
+ * @param string $type
+ * @param PDO|null $pdo
+ * @return string
+ */
+function generate_pickup_delivery_reference(string $type, ?PDO $pdo = null): string {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    $prefix = strtolower($type) === 'pickup' ? 'PU' : 'DL';
+
+    try {
+        $stmt = $pdo->prepare('
+            SELECT reference_number 
+            FROM pickup_deliveries 
+            WHERE reference_number LIKE :prefix 
+            ORDER BY id DESC 
+            LIMIT 1
+        ');
+        $stmt->execute(['prefix' => $prefix . '-%']);
+        $lastRef = $stmt->fetchColumn();
+
+        $nextNumber = 1;
+        if ($lastRef && preg_match('/^' . $prefix . '-(\d+)$/', $lastRef, $matches)) {
+            $nextNumber = (int)$matches[1] + 1;
+        }
+
+        do {
+            $candidateRef = sprintf('%s-%06d', $prefix, $nextNumber);
+            $checkStmt = $pdo->prepare('SELECT COUNT(*) FROM pickup_deliveries WHERE reference_number = :ref');
+            $checkStmt->execute(['ref' => $candidateRef]);
+            $exists = (int)$checkStmt->fetchColumn() > 0;
+            if ($exists) {
+                $nextNumber++;
+            }
+        } while ($exists);
+
+        return $candidateRef;
+    } catch (PDOException $e) {
+        error_log('Failed to generate pickup/delivery reference: ' . $e->getMessage());
+        return $prefix . '-' . date('ymd') . rand(100, 999);
+    }
+}
+
+/**
+ * Render Bootstrap badge for pickup/delivery type
+ *
+ * @param string $type
+ * @return string
+ */
+function delivery_type_badge(string $type): string {
+    $type = strtolower(trim($type));
+    return match ($type) {
+        'pickup'   => '<span class="badge bg-info-subtle text-info border border-info-subtle text-uppercase"><i class="bi bi-box-arrow-in-down-left me-1"></i>Pickup</span>',
+        'delivery' => '<span class="badge bg-primary-subtle text-primary border border-primary-subtle text-uppercase"><i class="bi bi-truck me-1"></i>Delivery</span>',
+        default    => '<span class="badge bg-light text-dark border text-uppercase">' . e($type) . '</span>'
+    };
+}
+
+/**
+ * Render Bootstrap badge for pickup/delivery status
+ *
+ * @param string $status
+ * @return string
+ */
+function delivery_status_badge(string $status): string {
+    $status = strtolower(trim($status));
+    return match ($status) {
+        'pending'     => '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle text-uppercase"><i class="bi bi-hourglass-split me-1"></i>Pending</span>',
+        'assigned'    => '<span class="badge bg-info-subtle text-info border border-info-subtle text-uppercase"><i class="bi bi-person-badge me-1"></i>Assigned</span>',
+        'in_progress' => '<span class="badge bg-warning-subtle text-warning border border-warning-subtle text-uppercase"><i class="bi bi-truck me-1"></i>In Progress</span>',
+        'completed'   => '<span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase"><i class="bi bi-check-circle me-1"></i>Completed</span>',
+        'cancelled'   => '<span class="badge bg-danger-subtle text-danger border border-danger-subtle text-uppercase"><i class="bi bi-x-circle me-1"></i>Cancelled</span>',
+        default       => '<span class="badge bg-light text-dark border text-uppercase">' . e($status) . '</span>'
+    };
+}
+
+/**
  * Get clean human-readable label for payment methods
  *
  * @param string $method

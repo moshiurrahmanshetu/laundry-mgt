@@ -36,6 +36,10 @@ File: [`phase_04_orders.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase
 File: [`phase_05_payments.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_05_payments.sql)
 - `payments` — Multi-payment transactions history, method breakdown, transaction references, void status, and order recalculations
 
+### Phase 06: Laundry Pickup & Delivery Management
+File: [`phase_06_delivery.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_06_delivery.sql)
+- `pickup_deliveries` — Customer laundry pickup and delivery requests, address snapshots, staff assignments, and delivery lifecycle tracking
+
 ---
 
 ## How to Import
@@ -50,6 +54,7 @@ File: [`phase_05_payments.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/pha
    - 3rd: `database/phase_03_services.sql`
    - 4th: `database/phase_04_orders.sql`
    - 5th: `database/phase_05_payments.sql`
+   - 6th: `database/phase_06_delivery.sql`
 5. Click **Import**.
 
 ### Option 2: Using MySQL CLI
@@ -60,6 +65,7 @@ mysql -u root -p laundry_mgt < database/phase_02_customers.sql
 mysql -u root -p laundry_mgt < database/phase_03_services.sql
 mysql -u root -p laundry_mgt < database/phase_04_orders.sql
 mysql -u root -p laundry_mgt < database/phase_05_payments.sql
+mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
 ```
 
 ---

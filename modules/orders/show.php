@@ -56,6 +56,17 @@ $paymentsStmt = $pdo->prepare('
 $paymentsStmt->execute(['order_id' => $orderId]);
 $orderPayments = $paymentsStmt->fetchAll();
 
+// Fetch pickup & delivery schedules for this order (Phase 06 Integration)
+$deliveryStmt = $pdo->prepare('
+    SELECT pd.*, u.name AS assigned_staff_name
+    FROM pickup_deliveries pd
+    LEFT JOIN users u ON pd.assigned_to = u.id
+    WHERE pd.order_id = :order_id AND pd.deleted_at IS NULL
+    ORDER BY pd.scheduled_date ASC, pd.id ASC
+');
+$deliveryStmt->execute(['order_id' => $orderId]);
+$orderDeliveries = $deliveryStmt->fetchAll();
+
 $pageTitle = 'Order ' . $order['order_number'];
 
 require_once __DIR__ . '/../../includes/header.php';
@@ -85,6 +96,27 @@ require_once __DIR__ . '/../../includes/topbar.php';
                 <a href="<?= base_url('modules/payments/create.php?order_id=' . (int)$order['id']) ?>" class="btn btn-success btn-sm">
                     <i class="bi bi-credit-card-fill me-1"></i> Receive Payment
                 </a>
+            <?php endif; ?>
+
+            <!-- Schedule Delivery Button -->
+            <?php if ($order['status'] !== 'cancelled'): ?>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-truck me-1"></i> Dispatch / Pickup
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                        <li>
+                            <a class="dropdown-item" href="<?= base_url('modules/delivery/create.php?order_id=' . (int)$order['id'] . '&type=pickup') ?>">
+                                <i class="bi bi-box-arrow-in-down-left me-2 text-info"></i> Schedule Pickup
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="<?= base_url('modules/delivery/create.php?order_id=' . (int)$order['id'] . '&type=delivery') ?>">
+                                <i class="bi bi-truck me-2 text-primary"></i> Schedule Delivery
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             <?php endif; ?>
 
             <!-- Print Receipt -->
@@ -187,7 +219,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
-    <!-- Right Column: Order Items, Financial Summary, Payment History & Notes -->
+    <!-- Right Column: Order Items, Financial Summary, Payment History & Pickup/Delivery Schedules -->
     <div class="col-12 col-lg-8">
         <!-- Order Items Table Card -->
         <div class="card shadow-sm mb-4">
@@ -345,6 +377,69 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
         </div>
 
+        <!-- Pickup & Delivery Requests Card (Phase 06 Feature) -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                <h3 class="h6 mb-0 fw-semibold"><i class="bi bi-truck me-2 text-primary"></i>Pickup &amp; Delivery Schedules</h3>
+                <div class="d-flex gap-2">
+                    <a href="<?= base_url('modules/delivery/create.php?order_id=' . (int)$order['id'] . '&type=pickup') ?>" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-box-arrow-in-down-left me-1"></i> + Pickup
+                    </a>
+                    <a href="<?= base_url('modules/delivery/create.php?order_id=' . (int)$order['id'] . '&type=delivery') ?>" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-truck me-1"></i> + Delivery
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($orderDeliveries)): ?>
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-geo-alt fs-2 d-block mb-1 text-secondary"></i>
+                        <p class="small mb-0">No pickup or delivery requests scheduled for this order.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th class="ps-3">Ref #</th>
+                                    <th>Type</th>
+                                    <th>Scheduled</th>
+                                    <th>Assigned Staff</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-3">Slip</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($orderDeliveries as $od): ?>
+                                    <tr>
+                                        <td class="ps-3 font-monospace fw-semibold">
+                                            <a href="<?= base_url('modules/delivery/show.php?id=' . (int)$od['id']) ?>" class="text-decoration-none">
+                                                <?= e($od['reference_number']) ?>
+                                            </a>
+                                        </td>
+                                        <td><?= delivery_type_badge($od['type']) ?></td>
+                                        <td class="small text-dark">
+                                            <?= e(format_datetime($od['scheduled_date'], 'M d, Y')) ?>
+                                            <?php if (!empty($od['scheduled_time'])): ?>
+                                                <span class="text-muted font-monospace">(<?= date('h:i A', strtotime($od['scheduled_time'])) ?>)</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="small text-dark"><?= e($od['assigned_staff_name'] ?: 'Unassigned') ?></td>
+                                        <td><?= delivery_status_badge($od['status']) ?></td>
+                                        <td class="text-end pe-3">
+                                            <a href="<?= base_url('modules/delivery/print.php?id=' . (int)$od['id']) ?>" target="_blank" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Print Slip">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <!-- Order Notes Card -->
         <?php if (!empty($order['notes'])): ?>
             <div class="card shadow-sm">
@@ -406,7 +501,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
                 </div>
                 <div class="modal-body py-4">
                     <p class="mb-2">Are you sure you want to delete order <strong class="font-monospace"><?= e($order['order_number']) ?></strong> for customer <strong><?= e($order['customer_name']) ?></strong>?</p>
-                    <p class="small text-muted mb-0">This order will be soft-deleted. Historical order items and payment records remain safely stored in the database.</p>
+                    <p class="small text-muted mb-0">This order will be soft-deleted. Historical order items, payment records, and delivery schedules remain safely stored in the database.</p>
                 </div>
                 <div class="modal-footer py-2 justify-content-between bg-light">
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>

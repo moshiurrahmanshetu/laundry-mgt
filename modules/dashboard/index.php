@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard View (Phase 01, Phase 02, Phase 03, Phase 04 & Phase 05)
+ * Dashboard View (Phase 01 through Phase 06 Active)
  * Project: Laundry Management System (laundry-mgt)
  */
 
@@ -20,6 +20,7 @@ $activeOrders = 0;
 $readyOrders = 0;
 $totalRevenue = 0.00;
 $totalPaymentsCount = 0;
+$pendingDeliveries = 0;
 
 try {
     $custStmt = $pdo->query('SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL');
@@ -49,12 +50,18 @@ try {
 } catch (PDOException $e) {}
 
 try {
-    // Phase 05 Authoritative Revenue from Payments Table
+    // Authoritative Revenue from Payments Table
     $revStmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed' AND deleted_at IS NULL");
     $totalRevenue = (float)$revStmt->fetchColumn();
 
     $payCountStmt = $pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'completed' AND deleted_at IS NULL");
     $totalPaymentsCount = (int)$payCountStmt->fetchColumn();
+} catch (PDOException $e) {}
+
+try {
+    // Phase 06 Active Pickup & Delivery requests
+    $delStmt = $pdo->query("SELECT COUNT(*) FROM pickup_deliveries WHERE status IN ('pending', 'assigned', 'in_progress') AND deleted_at IS NULL");
+    $pendingDeliveries = (int)$delStmt->fetchColumn();
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../../includes/header.php';
@@ -82,6 +89,9 @@ require_once __DIR__ . '/../../includes/topbar.php';
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
+                    <a href="<?= base_url('modules/delivery/create.php') ?>" class="btn btn-outline-dark btn-sm">
+                        <i class="bi bi-truck me-1"></i> Dispatch Request
+                    </a>
                     <a href="<?= base_url('modules/payments/create.php') ?>" class="btn btn-success btn-sm">
                         <i class="bi bi-credit-card-fill me-1"></i> Receive Payment
                     </a>
@@ -125,7 +135,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
-    <!-- Collected Revenue Metric Card (Phase 05 Authoritative Ledger) -->
+    <!-- Collected Revenue Metric Card -->
     <div class="col-12 col-md-6 col-xl-3">
         <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
@@ -150,6 +160,31 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
+    <!-- Active Pickups & Deliveries (Phase 06 Metric Card) -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div class="display-6 fw-bold text-dark mb-0"><?= $pendingDeliveries ?></div>
+                        <div class="text-muted small">Active Schedules</div>
+                    </div>
+                    <div class="p-3 bg-warning-subtle text-warning rounded-circle fs-4">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-clock-history text-warning me-1"></i><strong><?= $pendingDeliveries ?></strong> pickups/deliveries scheduled
+                </div>
+            </div>
+            <div class="card-footer bg-light py-2">
+                <a href="<?= base_url('modules/delivery/index.php') ?>" class="small text-decoration-none fw-semibold text-dark">
+                    Dispatch Schedules <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Registered Customers Metric Card -->
     <div class="col-12 col-md-6 col-xl-3">
         <div class="card h-100 shadow-sm border-0">
@@ -164,37 +199,12 @@ require_once __DIR__ . '/../../includes/topbar.php';
                     </div>
                 </div>
                 <div class="small text-muted">
-                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeCustomers ?></strong> active customer accounts
+                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeCustomers ?></strong> active accounts
                 </div>
             </div>
             <div class="card-footer bg-light py-2">
                 <a href="<?= base_url('modules/customers/index.php') ?>" class="small text-decoration-none fw-semibold">
                     Manage Customers <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Laundry Services Metric Card -->
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <div class="display-6 fw-bold text-dark mb-0"><?= $totalServices ?></div>
-                        <div class="text-muted small">Service Categories</div>
-                    </div>
-                    <div class="p-3 bg-secondary-subtle text-secondary rounded-circle fs-4">
-                        <i class="bi bi-tags-fill"></i>
-                    </div>
-                </div>
-                <div class="small text-muted">
-                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeServices ?></strong> active pricing models
-                </div>
-            </div>
-            <div class="card-footer bg-light py-2">
-                <a href="<?= base_url('modules/services/index.php') ?>" class="small text-decoration-none fw-semibold">
-                    Services &amp; Pricing <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             </div>
         </div>
@@ -210,7 +220,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Phases 01 through 05 are active in production mode:
+                    Phases 01 through 06 are active in production mode:
                 </p>
                 <div class="row g-3 text-center">
                     <div class="col-6 col-md-4 col-lg-2">
@@ -249,10 +259,10 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         </div>
                     </div>
                     <div class="col-6 col-md-4 col-lg-2">
-                        <div class="p-3 border rounded bg-light opacity-75">
-                            <span class="badge bg-secondary mb-2">Phase 6 (Next)</span>
-                            <div class="fw-bold text-muted small">Reports</div>
-                            <small class="text-muted" style="font-size: 0.75rem;">Analytics &amp; Sales</small>
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 6 (Active)</span>
+                            <div class="fw-bold text-dark small">Pickup &amp; Delivery</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Dispatch &amp; Slips</small>
                         </div>
                     </div>
                 </div>

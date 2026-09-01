@@ -10,6 +10,7 @@ $isCustomersActive = str_contains($currentScript, 'customers');
 $isServicesActive  = str_contains($currentScript, 'services');
 $isOrdersActive    = str_contains($currentScript, 'orders');
 $isPaymentsActive  = str_contains($currentScript, 'payments');
+$isDeliveryActive  = str_contains($currentScript, 'delivery');
 $isProfileActive   = str_contains($currentScript, 'profile');
 ?>
 <nav id="sidebar">
@@ -85,17 +86,29 @@ $isProfileActive   = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Reports (Phase 06) -->
+        <!-- Pickup & Delivery (Active in Phase 06) -->
+        <li class="nav-item">
+            <a href="<?= base_url('modules/delivery/index.php') ?>" 
+               class="nav-link <?= $isDeliveryActive ? 'active' : '' ?>"
+               data-bs-toggle="tooltip" 
+               data-bs-placement="right" 
+               data-bs-title="Pickup & Delivery">
+                <i class="bi bi-truck"></i>
+                <span class="link-text">Pickup &amp; Delivery</span>
+            </a>
+        </li>
+
+        <!-- Reports (Phase 07) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Reports (Phase 06)">
+               data-bs-title="Reports (Phase 07)">
                 <i class="bi bi-bar-chart-line-fill"></i>
                 <span class="link-text">Reports</span>
-                <span class="badge bg-secondary">Phase 6</span>
+                <span class="badge bg-secondary">Phase 7</span>
             </a>
         </li>
 
@@ -113,31 +126,31 @@ $isProfileActive   = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Staff & Roles (Phase 07) -->
+        <!-- Staff & Roles (Phase 08) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Staff & Roles (Phase 07)">
+               data-bs-title="Staff & Roles (Phase 08)">
                 <i class="bi bi-shield-lock-fill"></i>
                 <span class="link-text">Staff &amp; Roles</span>
-                <span class="badge bg-secondary">Phase 7</span>
+                <span class="badge bg-secondary">Phase 8</span>
             </a>
         </li>
 
-        <!-- Settings (Phase 08) -->
+        <!-- Settings (Phase 09) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Settings (Phase 08)">
+               data-bs-title="Settings (Phase 09)">
                 <i class="bi bi-gear-fill"></i>
                 <span class="link-text">Settings</span>
-                <span class="badge bg-secondary">Phase 8</span>
+                <span class="badge bg-secondary">Phase 9</span>
             </a>
         </li>
     </ul>
