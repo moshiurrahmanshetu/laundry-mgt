@@ -45,6 +45,17 @@ $itemStmt = $pdo->prepare('
 $itemStmt->execute(['order_id' => $orderId]);
 $items = $itemStmt->fetchAll();
 
+// Fetch payment transactions for this order (Phase 05 Integration)
+$paymentsStmt = $pdo->prepare('
+    SELECT p.*, u.name AS receiver_name
+    FROM payments p
+    LEFT JOIN users u ON p.received_by = u.id
+    WHERE p.order_id = :order_id AND p.deleted_at IS NULL
+    ORDER BY p.id ASC
+');
+$paymentsStmt->execute(['order_id' => $orderId]);
+$orderPayments = $paymentsStmt->fetchAll();
+
 $pageTitle = 'Order ' . $order['order_number'];
 
 require_once __DIR__ . '/../../includes/header.php';
@@ -69,11 +80,18 @@ require_once __DIR__ . '/../../includes/topbar.php';
 
         <!-- Action Buttons -->
         <div class="d-flex flex-wrap gap-2">
+            <!-- Add Payment Button (If order has due balance and is not cancelled) -->
+            <?php if ((float)$order['due_amount'] > 0 && $order['status'] !== 'cancelled'): ?>
+                <a href="<?= base_url('modules/payments/create.php?order_id=' . (int)$order['id']) ?>" class="btn btn-success btn-sm">
+                    <i class="bi bi-credit-card-fill me-1"></i> Receive Payment
+                </a>
+            <?php endif; ?>
+
             <!-- Print Receipt -->
             <a href="<?= base_url('modules/orders/print.php?id=' . (int)$order['id']) ?>" 
                target="_blank" 
                class="btn btn-outline-dark btn-sm">
-                <i class="bi bi-printer me-1"></i> Print Receipt
+                <i class="bi bi-printer me-1"></i> Print Order
             </a>
 
             <!-- Update Status -->
@@ -169,7 +187,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
-    <!-- Right Column: Order Items, Financial Summary & Notes -->
+    <!-- Right Column: Order Items, Financial Summary, Payment History & Notes -->
     <div class="col-12 col-lg-8">
         <!-- Order Items Table Card -->
         <div class="card shadow-sm mb-4">
@@ -222,8 +240,13 @@ require_once __DIR__ . '/../../includes/topbar.php';
 
         <!-- Financial Calculation Summary Card -->
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3">
-                <h3 class="h6 mb-0 fw-semibold"><i class="bi bi-credit-card me-2 text-primary"></i>Billing &amp; Payment Summary</h3>
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h3 class="h6 mb-0 fw-semibold"><i class="bi bi-calculator me-2 text-primary"></i>Billing &amp; Payment Balance</h3>
+                <?php if ((float)$order['due_amount'] > 0 && $order['status'] !== 'cancelled'): ?>
+                    <a href="<?= base_url('modules/payments/create.php?order_id=' . (int)$order['id']) ?>" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-plus-lg me-1"></i> Add Payment
+                    </a>
+                <?php endif; ?>
             </div>
             <div class="card-body p-4">
                 <div class="row g-3">
@@ -244,11 +267,11 @@ require_once __DIR__ . '/../../includes/topbar.php';
                     </div>
                     <div class="col-12 col-md-6 ps-md-4">
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Paid Amount:</span>
+                            <span class="text-muted">Total Paid to Date:</span>
                             <span class="font-monospace text-success fw-bold"><?= e(format_price($order['paid_amount'])) ?></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Due Balance:</span>
+                            <span class="text-muted">Remaining Due Balance:</span>
                             <span class="font-monospace <?= (float)$order['due_amount'] > 0 ? 'text-danger fw-bold fs-6' : 'text-muted' ?>">
                                 <?= e(format_price($order['due_amount'])) ?>
                             </span>
@@ -260,6 +283,65 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Payment History Card (Phase 05 Feature) -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                <h3 class="h6 mb-0 fw-semibold"><i class="bi bi-clock-history me-2 text-primary"></i>Payment History</h3>
+                <span class="badge bg-light text-dark border font-monospace"><?= count($orderPayments) ?> payment(s)</span>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($orderPayments)): ?>
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-cash-stack fs-2 d-block mb-1 text-secondary"></i>
+                        <p class="small mb-0">No payment transactions recorded for this order yet.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th class="ps-3">Payment #</th>
+                                    <th>Date</th>
+                                    <th>Method</th>
+                                    <th>Reference</th>
+                                    <th>Received By</th>
+                                    <th class="text-end">Amount</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-3">Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($orderPayments as $op): ?>
+                                    <tr>
+                                        <td class="ps-3 font-monospace fw-semibold">
+                                            <a href="<?= base_url('modules/payments/show.php?id=' . (int)$op['id']) ?>" class="text-decoration-none">
+                                                <?= e($op['payment_number']) ?>
+                                            </a>
+                                        </td>
+                                        <td class="small text-muted"><?= e(format_datetime($op['payment_date'], 'M d, Y')) ?></td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border"><?= e(payment_method_label($op['payment_method'])) ?></span>
+                                        </td>
+                                        <td class="small font-monospace text-muted"><?= e($op['transaction_reference'] ?: '—') ?></td>
+                                        <td class="small text-dark"><?= e($op['receiver_name'] ?: 'Staff') ?></td>
+                                        <td class="text-end font-monospace fw-bold <?= $op['status'] === 'completed' ? 'text-success' : 'text-muted text-decoration-line-through' ?>">
+                                            <?= e(format_price($op['amount'])) ?>
+                                        </td>
+                                        <td><?= payment_record_status_badge($op['status']) ?></td>
+                                        <td class="text-end pe-3">
+                                            <a href="<?= base_url('modules/payments/print.php?id=' . (int)$op['id']) ?>" target="_blank" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Print Receipt">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -324,7 +406,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
                 </div>
                 <div class="modal-body py-4">
                     <p class="mb-2">Are you sure you want to delete order <strong class="font-monospace"><?= e($order['order_number']) ?></strong> for customer <strong><?= e($order['customer_name']) ?></strong>?</p>
-                    <p class="small text-muted mb-0">This order will be soft-deleted. Historical order items remain safely recorded in the database.</p>
+                    <p class="small text-muted mb-0">This order will be soft-deleted. Historical order items and payment records remain safely stored in the database.</p>
                 </div>
                 <div class="modal-footer py-2 justify-content-between bg-light">
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>

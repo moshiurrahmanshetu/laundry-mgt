@@ -356,6 +356,148 @@ function generate_order_number(?PDO $pdo = null): string {
 }
 
 /**
+ * Generate unique sequential payment number (e.g. PAY-000001)
+ *
+ * @param PDO|null $pdo
+ * @return string
+ */
+function generate_payment_number(?PDO $pdo = null): string {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    try {
+        $stmt = $pdo->query('SELECT payment_number FROM payments ORDER BY id DESC LIMIT 1');
+        $lastNumber = $stmt->fetchColumn();
+
+        $nextNumber = 1;
+        if ($lastNumber && preg_match('/^PAY-(\d+)$/', $lastNumber, $matches)) {
+            $nextNumber = (int)$matches[1] + 1;
+        }
+
+        do {
+            $candidateNumber = sprintf('PAY-%06d', $nextNumber);
+            $checkStmt = $pdo->prepare('SELECT COUNT(*) FROM payments WHERE payment_number = :num');
+            $checkStmt->execute(['num' => $candidateNumber]);
+            $exists = (int)$checkStmt->fetchColumn() > 0;
+            if ($exists) {
+                $nextNumber++;
+            }
+        } while ($exists);
+
+        return $candidateNumber;
+    } catch (PDOException $e) {
+        error_log('Failed to generate payment number: ' . $e->getMessage());
+        return 'PAY-' . date('ymd') . rand(100, 999);
+    }
+}
+
+/**
+ * Get clean human-readable label for payment methods
+ *
+ * @param string $method
+ * @return string
+ */
+function payment_method_label(string $method): string {
+    $method = strtolower(trim($method));
+    return match ($method) {
+        'cash'           => 'Cash',
+        'card'           => 'Credit/Debit Card',
+        'mobile_banking' => 'Mobile Banking',
+        'bank_transfer'  => 'Bank Transfer',
+        'other'          => 'Other',
+        default          => ucfirst(str_replace('_', ' ', $method))
+    };
+}
+
+/**
+ * Render Bootstrap badge for payment transaction status
+ *
+ * @param string $status
+ * @return string
+ */
+function payment_record_status_badge(string $status): string {
+    $status = strtolower(trim($status));
+    return match ($status) {
+        'completed' => '<span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase"><i class="bi bi-check-circle me-1"></i>Completed</span>',
+        'voided'    => '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle text-uppercase"><i class="bi bi-slash-circle me-1"></i>Voided</span>',
+        default     => '<span class="badge bg-light text-dark border text-uppercase">' . e($status) . '</span>'
+    };
+}
+
+/**
+ * Recalculate order payment summary authoritatively from completed payments in DB
+ *
+ * @param int $orderId
+ * @param PDO|null $pdo
+ * @return array
+ */
+function recalculate_order_payment_summary(int $orderId, ?PDO $pdo = null): array {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    // 1. Fetch current order total
+    $ordStmt = $pdo->prepare('SELECT id, total FROM orders WHERE id = :id LIMIT 1');
+    $ordStmt->execute(['id' => $orderId]);
+    $order = $ordStmt->fetch();
+
+    if (!$order) {
+        return [
+            'total'          => 0.00,
+            'paid_amount'    => 0.00,
+            'due_amount'     => 0.00,
+            'payment_status' => 'unpaid'
+        ];
+    }
+
+    $total = (float)$order['total'];
+
+    // 2. Sum valid completed non-deleted payments
+    $sumStmt = $pdo->prepare('
+        SELECT COALESCE(SUM(amount), 0)
+        FROM payments
+        WHERE order_id = :order_id AND status = "completed" AND deleted_at IS NULL
+    ');
+    $sumStmt->execute(['order_id' => $orderId]);
+    $paidAmount = round((float)$sumStmt->fetchColumn(), 2);
+
+    // 3. Calculate due amount and payment status
+    $dueAmount = round(max(0, $total - $paidAmount), 2);
+
+    if ($total == 0 || $paidAmount >= $total) {
+        $paymentStatus = 'paid';
+    } elseif ($paidAmount > 0) {
+        $paymentStatus = 'partial';
+    } else {
+        $paymentStatus = 'unpaid';
+    }
+
+    // 4. Update order summary record
+    $updateStmt = $pdo->prepare('
+        UPDATE orders SET
+            paid_amount    = :paid_amount,
+            due_amount     = :due_amount,
+            payment_status = :payment_status,
+            updated_at     = NOW()
+        WHERE id = :id
+    ');
+    $updateStmt->execute([
+        'paid_amount'    => $paidAmount,
+        'due_amount'     => $dueAmount,
+        'payment_status' => $paymentStatus,
+        'id'             => $orderId
+    ]);
+
+    return [
+        'total'          => $total,
+        'paid_amount'    => $paidAmount,
+        'due_amount'     => $dueAmount,
+        'payment_status' => $paymentStatus
+    ];
+}
+
+/**
  * Render Bootstrap badge HTML for order status
  *
  * @param string $status

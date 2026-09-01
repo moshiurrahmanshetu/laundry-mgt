@@ -256,6 +256,28 @@ try {
         ]);
     }
 
+    // Phase 05: If initial advance payment provided, insert initial transaction in payments table
+    if ($paidAmount > 0) {
+        $paymentNumber = generate_payment_number($pdo);
+        $insertPaymentStmt = $pdo->prepare('
+            INSERT INTO payments (
+                payment_number, order_id, amount, payment_method,
+                transaction_reference, payment_date, notes, received_by,
+                status, created_at, updated_at
+            ) VALUES (
+                :payment_number, :order_id, :amount, "cash",
+                NULL, NOW(), "Initial advance payment recorded at order intake", :received_by,
+                "completed", NOW(), NOW()
+            )
+        ');
+        $insertPaymentStmt->execute([
+            'payment_number' => $paymentNumber,
+            'order_id'       => $orderId,
+            'amount'         => $paidAmount,
+            'received_by'    => $createdBy
+        ]);
+    }
+
     $pdo->commit();
 
     // 8. Log Activity

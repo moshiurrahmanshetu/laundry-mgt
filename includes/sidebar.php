@@ -9,6 +9,7 @@ $isDashboardActive = str_contains($currentScript, 'dashboard');
 $isCustomersActive = str_contains($currentScript, 'customers');
 $isServicesActive  = str_contains($currentScript, 'services');
 $isOrdersActive    = str_contains($currentScript, 'orders');
+$isPaymentsActive  = str_contains($currentScript, 'payments');
 $isProfileActive   = str_contains($currentScript, 'profile');
 ?>
 <nav id="sidebar">
@@ -72,17 +73,15 @@ $isProfileActive   = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Payments (Phase 05) -->
+        <!-- Payments (Active in Phase 05) -->
         <li class="nav-item">
-            <a href="javascript:void(0);" 
-               class="nav-link disabled" 
-               aria-disabled="true"
+            <a href="<?= base_url('modules/payments/index.php') ?>" 
+               class="nav-link <?= $isPaymentsActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Payments (Phase 05)">
+               data-bs-title="Payments">
                 <i class="bi bi-credit-card-fill"></i>
                 <span class="link-text">Payments</span>
-                <span class="badge bg-secondary">Phase 5</span>
             </a>
         </li>
 

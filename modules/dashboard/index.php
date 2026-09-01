@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard View (Phase 01, Phase 02, Phase 03 & Phase 04)
+ * Dashboard View (Phase 01, Phase 02, Phase 03, Phase 04 & Phase 05)
  * Project: Laundry Management System (laundry-mgt)
  */
 
@@ -19,6 +19,7 @@ $totalOrders = 0;
 $activeOrders = 0;
 $readyOrders = 0;
 $totalRevenue = 0.00;
+$totalPaymentsCount = 0;
 
 try {
     $custStmt = $pdo->query('SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL');
@@ -45,9 +46,15 @@ try {
 
     $readyOrdStmt = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'ready' AND deleted_at IS NULL");
     $readyOrders = (int)$readyOrdStmt->fetchColumn();
+} catch (PDOException $e) {}
 
-    $revStmt = $pdo->query("SELECT SUM(paid_amount) FROM orders WHERE deleted_at IS NULL");
+try {
+    // Phase 05 Authoritative Revenue from Payments Table
+    $revStmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed' AND deleted_at IS NULL");
     $totalRevenue = (float)$revStmt->fetchColumn();
+
+    $payCountStmt = $pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'completed' AND deleted_at IS NULL");
+    $totalPaymentsCount = (int)$payCountStmt->fetchColumn();
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../../includes/header.php';
@@ -75,17 +82,15 @@ require_once __DIR__ . '/../../includes/topbar.php';
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
+                    <a href="<?= base_url('modules/payments/create.php') ?>" class="btn btn-success btn-sm">
+                        <i class="bi bi-credit-card-fill me-1"></i> Receive Payment
+                    </a>
                     <a href="<?= base_url('modules/orders/create.php') ?>" class="btn btn-primary btn-sm">
                         <i class="bi bi-plus-lg me-1"></i> New Order
                     </a>
                     <a href="<?= base_url('modules/customers/create.php') ?>" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-person-plus me-1"></i> Add Customer
                     </a>
-                    <?php if (is_admin() || is_manager()): ?>
-                        <a href="<?= base_url('modules/services/create.php') ?>" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-tag me-1"></i> Add Service
-                        </a>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -114,7 +119,32 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-footer bg-light py-2">
                 <a href="<?= base_url('modules/orders/index.php') ?>" class="small text-decoration-none fw-semibold">
-                    View All Orders <i class="bi bi-arrow-right ms-1"></i>
+                    View Orders <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collected Revenue Metric Card (Phase 05 Authoritative Ledger) -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div class="display-6 fw-bold text-success mb-0"><?= format_price($totalRevenue) ?></div>
+                        <div class="text-muted small">Collected Revenue</div>
+                    </div>
+                    <div class="p-3 bg-success-subtle text-success rounded-circle fs-4">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-receipt text-success me-1"></i><strong><?= $totalPaymentsCount ?></strong> payment transactions
+                </div>
+            </div>
+            <div class="card-footer bg-light py-2">
+                <a href="<?= base_url('modules/payments/index.php') ?>" class="small text-decoration-none fw-semibold text-success">
+                    View Payments <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             </div>
         </div>
@@ -129,12 +159,12 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         <div class="display-6 fw-bold text-dark mb-0"><?= $totalCustomers ?></div>
                         <div class="text-muted small">Registered Customers</div>
                     </div>
-                    <div class="p-3 bg-success-subtle text-success rounded-circle fs-4">
+                    <div class="p-3 bg-info-subtle text-info rounded-circle fs-4">
                         <i class="bi bi-people-fill"></i>
                     </div>
                 </div>
                 <div class="small text-muted">
-                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeCustomers ?></strong> active customer profiles
+                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeCustomers ?></strong> active customer accounts
                 </div>
             </div>
             <div class="card-footer bg-light py-2">
@@ -154,7 +184,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         <div class="display-6 fw-bold text-dark mb-0"><?= $totalServices ?></div>
                         <div class="text-muted small">Service Categories</div>
                     </div>
-                    <div class="p-3 bg-info-subtle text-info rounded-circle fs-4">
+                    <div class="p-3 bg-secondary-subtle text-secondary rounded-circle fs-4">
                         <i class="bi bi-tags-fill"></i>
                     </div>
                 </div>
@@ -169,29 +199,6 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
         </div>
     </div>
-
-    <!-- Collected Revenue Metric Card -->
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <div class="display-6 fw-bold text-dark mb-0"><?= format_price($totalRevenue) ?></div>
-                        <div class="text-muted small">Total Collected Revenue</div>
-                    </div>
-                    <div class="p-3 bg-secondary-subtle text-secondary rounded-circle fs-4">
-                        <i class="bi bi-cash-stack"></i>
-                    </div>
-                </div>
-                <div class="small text-muted">
-                    <i class="bi bi-shield-check text-success me-1"></i>Authoritative order balances
-                </div>
-            </div>
-            <div class="card-footer bg-light py-2">
-                <span class="small text-muted">Phase 05 Payment System</span>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Laundry Management Development Roadmap -->
@@ -203,35 +210,49 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Phases 01 through 04 are active in production mode:
+                    Phases 01 through 05 are active in production mode:
                 </p>
                 <div class="row g-3 text-center">
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 1 (Active)</span>
-                            <div class="fw-bold text-dark">Auth &amp; Foundation</div>
-                            <small class="text-muted">Roles, Users, Security</small>
+                            <div class="fw-bold text-dark small">Auth &amp; Foundation</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Users, Security</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 2 (Active)</span>
-                            <div class="fw-bold text-dark">Customer Management</div>
-                            <small class="text-muted">Profiles, Search, History</small>
+                            <div class="fw-bold text-dark small">Customers</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Profiles, Search</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 3 (Active)</span>
-                            <div class="fw-bold text-dark">Services &amp; Pricing</div>
-                            <small class="text-muted">Per Item &amp; Per KG</small>
+                            <div class="fw-bold text-dark small">Services &amp; Pricing</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Per Item / Per KG</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 4 (Active)</span>
-                            <div class="fw-bold text-dark">Order Management</div>
-                            <small class="text-muted">Intake, Lifecycle, Receipts</small>
+                            <div class="fw-bold text-dark small">Order Intake</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Lifecycle, Orders</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 5 (Active)</span>
+                            <div class="fw-bold text-dark small">Payments</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Multi-pay, Vouchers</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="p-3 border rounded bg-light opacity-75">
+                            <span class="badge bg-secondary mb-2">Phase 6 (Next)</span>
+                            <div class="fw-bold text-muted small">Reports</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Analytics &amp; Sales</small>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 04
+# Laundry Management System (`laundry-mgt`) — Phase 05
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -6,7 +6,7 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 ## 1. Project Purpose & Overview
 
-The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, deliveries, invoices, and staff permissions.
+The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, deliveries, invoices, multi-installment payments, and staff permissions.
 
 ### Implemented Phases
 - **Phase 01: Foundation & Authentication System**
@@ -29,15 +29,23 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Dual Pricing Models: **Per Item / Garment** and **Per KG Weight**
   - Dynamic JavaScript Row Manager
   - Database Transaction Safety (Atomically saves services and itemized rates)
-- **Phase 04: Laundry Order Management (NEW)**
+- **Phase 04: Laundry Order Management**
   - Full Order Intake Workflow (Customer selection, intake date, expected delivery date, handling notes)
   - Dynamic Garment & Rate Calculator (Per Item rates and Per KG weight calculations in real time)
-  - **Server-Side Authoritative Pricing Security** (Client calculations provide instant UI feedback; server strictly recalculates all line totals, subtotals, discounts, totals, and balances from database rates)
-  - **Historical Pricing Snapshots** (`order_items` stores historical snapshots of service names, item names, and unit prices)
+  - Server-Side Authoritative Pricing Security
+  - Historical Pricing Snapshots (`order_items` stores historical snapshots)
   - Order Lifecycle Management (`received` -> `processing` -> `ready` -> `delivered` / `cancelled`)
-  - Order-Level Discounts and Initial Advance Payments with due balance calculation
-  - Professional Printable Receipt/Invoice (`print.php` with `@media print` styling)
-  - Server-Side Role Enforcement (Staff restricted from deleting orders)
+  - Professional Printable Order Invoice (`print.php`)
+- **Phase 05: Payment Management (NEW)**
+  - Multi-Payment Transaction System (One order supports multiple installments/advances)
+  - Payment Methods: **Cash**, **Credit/Debit Card**, **Mobile Banking** (bKash/Nagad/Rocket), **Bank Transfer**, and **Other**
+  - Transaction Reference Tracking (TrxID, POS Auth codes, Check numbers)
+  - **Financial Concurrency Safety**: Row-level locking via `SELECT ... FOR UPDATE` inside `PDO::beginTransaction()` prevents simultaneous race conditions and overpayments
+  - **Authoritative Ledger Calculation**: `recalculate_order_payment_summary()` dynamically syncs `orders.paid_amount`, `orders.due_amount`, and `orders.payment_status` (`unpaid`, `partial`, `paid`)
+  - **Safe Audit Voiding**: Completed payments are never physically destroyed; Administrators can void payments (`status = 'voided'`), which restores order balances and logs audit trails in `activity_logs`
+  - Integrated Payment History section on Order Details view with `[ + Receive Payment ]` quick actions
+  - Printable Payment Receipt Voucher (`print.php` with clean `@media print` styling)
+  - Role-Based Financial Guard: Staff can view, record, and print payments, but cannot void historical payments
 
 ---
 
@@ -92,6 +100,7 @@ laundry-mgt/
 │   ├── phase_02_customers.sql     # Phase 02 customers table & sample seed data
 │   ├── phase_03_services.sql      # Phase 03 services & service_items schema & seed data
 │   ├── phase_04_orders.sql        # Phase 04 orders & order_items schema & seed data
+│   ├── phase_05_payments.sql      # Phase 05 payments table & seed data
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -99,14 +108,14 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with active Orders navigation
+│   ├── sidebar.php                # Collapsible sidebar with active Orders & Payments navigation
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
-│   └── functions.php              # Global helpers (CSRF, order number generator, badges)
+│   └── functions.php              # Global helpers (CSRF, numbering, order recalculation, badges)
 │
 ├── modules/
 │   ├── dashboard/
-│   │   └── index.php              # Main Dashboard (User profile, customer, service & order metrics)
+│   │   └── index.php              # Main Dashboard (User profile, customer, service, order & payment metrics)
 │   │
 │   ├── customers/
 │   │   ├── index.php              # Customer listing with search, filter & pagination
@@ -132,13 +141,23 @@ laundry-mgt/
 │   │   ├── index.php              # Orders list with search, status/payment filters & pagination
 │   │   ├── create.php             # New order intake with dynamic JS item rows
 │   │   ├── store.php              # Transaction-safe order store & authoritative price verification
-│   │   ├── show.php               # Order details profile, garment list & balance breakdown
+│   │   ├── show.php               # Order details view, customer card, payment history table & actions
 │   │   ├── edit.php               # Edit order form
 │   │   ├── update.php             # Order update handler (Transaction-safe)
 │   │   ├── update_status.php      # Order lifecycle status transition handler
 │   │   ├── delete.php             # Soft delete handler (Admin/Manager only)
 │   │   ├── print.php              # Printable invoice/receipt
 │   │   └── get_service_items.php  # Secure AJAX helper for cascading item dropdowns
+│   │
+│   ├── payments/
+│   │   ├── index.php              # Payments list with search, method/status/date filters & pagination
+│   │   ├── create.php             # Receive payment form with live due preview & order dropdown
+│   │   ├── store.php              # Concurrency-safe payment store with row-locking FOR UPDATE
+│   │   ├── show.php               # Payment voucher details & order financial summary
+│   │   ├── edit.php               # Edit payment metadata (Admin only)
+│   │   ├── update.php             # Payment metadata update handler (Admin only)
+│   │   ├── delete.php             # Void payment handler (Admin only, restores order balance)
+│   │   └── print.php              # Printable payment receipt voucher
 │   │
 │   └── profile/
 │       ├── index.php              # Profile management & settings view
@@ -164,6 +183,7 @@ laundry-mgt/
 2. `database/phase_02_customers.sql`
 3. `database/phase_03_services.sql`
 4. `database/phase_04_orders.sql`
+5. `database/phase_05_payments.sql`
 
 Via CLI:
 ```bash
@@ -171,17 +191,22 @@ mysql -u root -p laundry_mgt < database/phase_01_authentication.sql
 mysql -u root -p laundry_mgt < database/phase_02_customers.sql
 mysql -u root -p laundry_mgt < database/phase_03_services.sql
 mysql -u root -p laundry_mgt < database/phase_04_orders.sql
+mysql -u root -p laundry_mgt < database/phase_05_payments.sql
 ```
 
 ---
 
-## 6. Roles & Permissions (Phase 01, 02, 03 & 04)
+## 6. Roles & Permissions (Phase 01 — 05)
 
-| Role | View / Search Orders | Create Order | Edit Order | Update Order Status | Print Receipt | Delete Order |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Administrator** | Yes | Yes | Yes | Yes | Yes | Yes |
-| **Manager** | Yes | Yes | Yes | Yes | Yes | Yes |
-| **Staff** | Yes | Yes | Yes | Yes | Yes | **No (403)** |
+| Module Action | Administrator | Manager | Staff |
+| :--- | :---: | :---: | :---: |
+| **View / Search Payments** | Yes | Yes | Yes |
+| **Receive / Record Payment** | Yes | Yes | Yes |
+| **Print Payment Receipt** | Yes | Yes | Yes |
+| **Edit Payment Metadata** | Yes | No (403) | No (403) |
+| **Void Payment Transaction** | Yes | No (403) | No (403) |
+| **Delete Order** | Yes | Yes | No (403) |
+| **Manage Services & Pricing** | Yes | Yes | No (403) |
 
 ---
 
@@ -190,8 +215,8 @@ mysql -u root -p laundry_mgt < database/phase_04_orders.sql
 - **Phase 01 (Complete):** Authentication, Role Access, Security Baseline
 - **Phase 02 (Complete):** Customer Management (Profiles, Search, Pagination, History)
 - **Phase 03 (Complete):** Laundry Services & Pricing (Item Rates, Per KG, Dynamic JS Rows)
-- **Phase 04 (Complete):** Laundry Order Management (Intake, Real-time Calculator, Receipts)
-- **Phase 05:** Payments & Invoicing (POS, Payment Gateways, Payment History)
+- **Phase 04 (Complete):** Laundry Order Management (Intake, Real-time Calculator, Invoices)
+- **Phase 05 (Complete):** Payment Management (Multi-pay, Vouchers, Concurrency, Voiding)
 - **Phase 06:** Reports & Analytics (Revenue, Operations, Daily Intake)
 - **Phase 07:** Staff Management & Role Permissions
 - **Phase 08:** System Settings & Equipment Management
