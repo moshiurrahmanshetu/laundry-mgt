@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard View (Phase 01 & Phase 02)
+ * Dashboard View (Phase 01, Phase 02, Phase 03 & Phase 04)
  * Project: Laundry Management System (laundry-mgt)
  */
 
@@ -10,18 +10,45 @@ $pageTitle = 'Dashboard';
 $currentUser = current_user(true); // Fetch fresh data
 $pdo = getDBConnection();
 
-// Fetch quick counts
+// Fetch metrics
 $totalCustomers = 0;
 $activeCustomers = 0;
+$totalServices = 0;
+$activeServices = 0;
+$totalOrders = 0;
+$activeOrders = 0;
+$readyOrders = 0;
+$totalRevenue = 0.00;
+
 try {
     $custStmt = $pdo->query('SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL');
     $totalCustomers = (int)$custStmt->fetchColumn();
 
     $activeCustStmt = $pdo->query("SELECT COUNT(*) FROM customers WHERE status = 'active' AND deleted_at IS NULL");
     $activeCustomers = (int)$activeCustStmt->fetchColumn();
-} catch (PDOException $e) {
-    // Table may not be migrated yet in testing
-}
+} catch (PDOException $e) {}
+
+try {
+    $svcStmt = $pdo->query('SELECT COUNT(*) FROM services WHERE deleted_at IS NULL');
+    $totalServices = (int)$svcStmt->fetchColumn();
+
+    $activeSvcStmt = $pdo->query("SELECT COUNT(*) FROM services WHERE status = 'active' AND deleted_at IS NULL");
+    $activeServices = (int)$activeSvcStmt->fetchColumn();
+} catch (PDOException $e) {}
+
+try {
+    $ordStmt = $pdo->query('SELECT COUNT(*) FROM orders WHERE deleted_at IS NULL');
+    $totalOrders = (int)$ordStmt->fetchColumn();
+
+    $activeOrdStmt = $pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('received', 'processing') AND deleted_at IS NULL");
+    $activeOrders = (int)$activeOrdStmt->fetchColumn();
+
+    $readyOrdStmt = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'ready' AND deleted_at IS NULL");
+    $readyOrders = (int)$readyOrdStmt->fetchColumn();
+
+    $revStmt = $pdo->query("SELECT SUM(paid_amount) FROM orders WHERE deleted_at IS NULL");
+    $totalRevenue = (float)$revStmt->fetchColumn();
+} catch (PDOException $e) {}
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
@@ -47,43 +74,70 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         </div>
                     </div>
                 </div>
-                <div class="d-flex gap-2">
-                    <a href="<?= base_url('modules/customers/create.php') ?>" class="btn btn-primary btn-sm">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="<?= base_url('modules/orders/create.php') ?>" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i> New Order
+                    </a>
+                    <a href="<?= base_url('modules/customers/create.php') ?>" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-person-plus me-1"></i> Add Customer
                     </a>
-                    <a href="<?= base_url('modules/profile/index.php') ?>" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-person-gear me-1"></i> Manage Profile
-                    </a>
+                    <?php if (is_admin() || is_manager()): ?>
+                        <a href="<?= base_url('modules/services/create.php') ?>" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-tag me-1"></i> Add Service
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Info Cards Grid -->
+<!-- Key Business Metrics Grid -->
 <div class="row g-4 mb-4">
-    <!-- Customer Management Metric Card -->
-    <div class="col-12 col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <span class="fw-semibold"><i class="bi bi-people text-primary me-2"></i>Customers (Phase 02)</span>
-                <span class="badge bg-success-subtle text-success border border-success-subtle">Module Active</span>
+    <!-- Active Laundry Orders Metric Card -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div class="display-6 fw-bold text-dark mb-0"><?= $totalOrders ?></div>
+                        <div class="text-muted small">Total Laundry Orders</div>
+                    </div>
+                    <div class="p-3 bg-primary-subtle text-primary rounded-circle fs-4">
+                        <i class="bi bi-basket3-fill"></i>
+                    </div>
+                </div>
+                <div class="small text-muted d-flex justify-content-between">
+                    <span><i class="bi bi-gear text-warning me-1"></i><strong><?= $activeOrders ?></strong> in wash/press</span>
+                    <span><i class="bi bi-check2-circle text-success me-1"></i><strong><?= $readyOrders ?></strong> ready</span>
+                </div>
             </div>
+            <div class="card-footer bg-light py-2">
+                <a href="<?= base_url('modules/orders/index.php') ?>" class="small text-decoration-none fw-semibold">
+                    View All Orders <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registered Customers Metric Card -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div>
                         <div class="display-6 fw-bold text-dark mb-0"><?= $totalCustomers ?></div>
-                        <div class="text-muted small">Total Registered Customers</div>
+                        <div class="text-muted small">Registered Customers</div>
                     </div>
-                    <div class="p-3 bg-primary-subtle text-primary rounded-circle fs-3">
-                        <i class="bi bi-person-lines-fill"></i>
+                    <div class="p-3 bg-success-subtle text-success rounded-circle fs-4">
+                        <i class="bi bi-people-fill"></i>
                     </div>
                 </div>
                 <div class="small text-muted">
-                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeCustomers ?></strong> active accounts
+                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeCustomers ?></strong> active customer profiles
                 </div>
             </div>
-            <div class="card-footer bg-light">
+            <div class="card-footer bg-light py-2">
                 <a href="<?= base_url('modules/customers/index.php') ?>" class="small text-decoration-none fw-semibold">
                     Manage Customers <i class="bi bi-arrow-right ms-1"></i>
                 </a>
@@ -91,70 +145,50 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
-    <!-- Security & Auth Status Card -->
-    <div class="col-12 col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <span class="fw-semibold"><i class="bi bi-shield-lock text-primary me-2"></i>Security Baseline</span>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Secure</span>
-            </div>
+    <!-- Laundry Services Metric Card -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
-                <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
-                    <li class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">Role Authorization</span>
-                        <span class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i><?= e($currentUser['role_name']) ?></span>
-                    </li>
-                    <li class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">CSRF Protection</span>
-                        <span class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i>Tokens Active</span>
-                    </li>
-                    <li class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">Audit Trail</span>
-                        <span class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i>Activity Logged</span>
-                    </li>
-                    <li class="d-flex justify-content-between py-1">
-                        <span class="text-muted">Soft Delete System</span>
-                        <span class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i>Safe Deletes</span>
-                    </li>
-                </ul>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div class="display-6 fw-bold text-dark mb-0"><?= $totalServices ?></div>
+                        <div class="text-muted small">Service Categories</div>
+                    </div>
+                    <div class="p-3 bg-info-subtle text-info rounded-circle fs-4">
+                        <i class="bi bi-tags-fill"></i>
+                    </div>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeServices ?></strong> active pricing models
+                </div>
             </div>
-            <div class="card-footer bg-light">
-                <a href="<?= base_url('modules/profile/index.php#change-password-section') ?>" class="small text-decoration-none fw-semibold">
-                    Change Password <i class="bi bi-arrow-right ms-1"></i>
+            <div class="card-footer bg-light py-2">
+                <a href="<?= base_url('modules/services/index.php') ?>" class="small text-decoration-none fw-semibold">
+                    Services &amp; Pricing <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- System Status & Environment -->
-    <div class="col-12 col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <span class="fw-semibold"><i class="bi bi-cpu text-primary me-2"></i>System Status</span>
-                <span class="badge bg-info-subtle text-info border border-info-subtle">Phase 02</span>
-            </div>
+    <!-- Collected Revenue Metric Card -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
-                <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
-                    <li class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">Application</span>
-                        <span class="fw-semibold text-dark"><?= e(APP_SHORT_NAME) ?> v<?= e(APP_VERSION) ?></span>
-                    </li>
-                    <li class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">PHP Engine</span>
-                        <span class="fw-semibold text-dark">PHP <?= phpversion() ?></span>
-                    </li>
-                    <li class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">Database</span>
-                        <span class="fw-semibold text-dark">MySQL (<?= e(DB_NAME) ?>)</span>
-                    </li>
-                    <li class="d-flex justify-content-between py-1">
-                        <span class="text-muted">Environment</span>
-                        <span class="badge bg-secondary text-uppercase"><?= e(APP_ENV) ?></span>
-                    </li>
-                </ul>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div class="display-6 fw-bold text-dark mb-0"><?= format_price($totalRevenue) ?></div>
+                        <div class="text-muted small">Total Collected Revenue</div>
+                    </div>
+                    <div class="p-3 bg-secondary-subtle text-secondary rounded-circle fs-4">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-shield-check text-success me-1"></i>Authoritative order balances
+                </div>
             </div>
-            <div class="card-footer bg-light">
-                <span class="small text-muted">Ready for Phase 03</span>
+            <div class="card-footer bg-light py-2">
+                <span class="small text-muted">Phase 05 Payment System</span>
             </div>
         </div>
     </div>
@@ -169,7 +203,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Phase 01 (Authentication) and Phase 02 (Customer Management) are currently active. Core laundry operation modules will be enabled in subsequent phases:
+                    Phases 01 through 04 are active in production mode:
                 </p>
                 <div class="row g-3 text-center">
                     <div class="col-6 col-md-3">
@@ -183,21 +217,21 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 2 (Active)</span>
                             <div class="fw-bold text-dark">Customer Management</div>
-                            <small class="text-muted">Profiles, Search, Filters</small>
+                            <small class="text-muted">Profiles, Search, History</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-3 border rounded">
-                            <span class="badge bg-secondary mb-2">Phase 3</span>
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 3 (Active)</span>
                             <div class="fw-bold text-dark">Services &amp; Pricing</div>
-                            <small class="text-muted">Dry Cleaning, Wash &amp; Fold</small>
+                            <small class="text-muted">Per Item &amp; Per KG</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-3 border rounded">
-                            <span class="badge bg-secondary mb-2">Phase 4</span>
-                            <div class="fw-bold text-dark">Laundry Orders</div>
-                            <small class="text-muted">Intake, Status, Pickup</small>
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 4 (Active)</span>
+                            <div class="fw-bold text-dark">Order Management</div>
+                            <small class="text-muted">Intake, Lifecycle, Receipts</small>
                         </div>
                     </div>
                 </div>

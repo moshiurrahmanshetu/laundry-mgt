@@ -204,6 +204,7 @@ function is_staff(): bool {
  */
 function require_role(string|array $roles, ?string $redirectPath = null): void {
     if (!has_role($roles)) {
+        http_response_code(403);
         set_flash_message('error', 'Access Denied: You do not have permission to perform this action.');
         redirect($redirectPath ?? 'modules/dashboard/index.php');
     }
@@ -271,6 +272,132 @@ function generate_customer_code(?PDO $pdo = null): string {
         error_log('Failed to generate customer code: ' . $e->getMessage());
         return 'CUS-' . date('ymd') . rand(100, 999);
     }
+}
+
+/**
+ * Generate unique URL slug for laundry services
+ *
+ * @param string $name
+ * @param int|null $excludeId
+ * @param PDO|null $pdo
+ * @return string
+ */
+function generate_service_slug(string $name, ?int $excludeId = null, ?PDO $pdo = null): string {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    $slug = strtolower(trim($name));
+    $slug = preg_replace('/[^a-z0-9]+/i', '-', $slug);
+    $slug = trim($slug, '-');
+    if (empty($slug)) {
+        $slug = 'service-' . time();
+    }
+
+    $baseSlug = $slug;
+    $counter = 1;
+
+    do {
+        $sql = 'SELECT COUNT(*) FROM services WHERE slug = :slug AND deleted_at IS NULL';
+        $params = ['slug' => $slug];
+        if ($excludeId !== null) {
+            $sql .= ' AND id != :exclude_id';
+            $params['exclude_id'] = $excludeId;
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $exists = (int)$stmt->fetchColumn() > 0;
+
+        if ($exists) {
+            $counter++;
+            $slug = $baseSlug . '-' . $counter;
+        }
+    } while ($exists);
+
+    return $slug;
+}
+
+/**
+ * Generate unique sequential order number (e.g. ORD-000001)
+ *
+ * @param PDO|null $pdo
+ * @return string
+ */
+function generate_order_number(?PDO $pdo = null): string {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    try {
+        $stmt = $pdo->query('SELECT order_number FROM orders ORDER BY id DESC LIMIT 1');
+        $lastNumber = $stmt->fetchColumn();
+
+        $nextNumber = 1;
+        if ($lastNumber && preg_match('/^ORD-(\d+)$/', $lastNumber, $matches)) {
+            $nextNumber = (int)$matches[1] + 1;
+        }
+
+        do {
+            $candidateNumber = sprintf('ORD-%06d', $nextNumber);
+            $checkStmt = $pdo->prepare('SELECT COUNT(*) FROM orders WHERE order_number = :num');
+            $checkStmt->execute(['num' => $candidateNumber]);
+            $exists = (int)$checkStmt->fetchColumn() > 0;
+            if ($exists) {
+                $nextNumber++;
+            }
+        } while ($exists);
+
+        return $candidateNumber;
+    } catch (PDOException $e) {
+        error_log('Failed to generate order number: ' . $e->getMessage());
+        return 'ORD-' . date('ymd') . rand(100, 999);
+    }
+}
+
+/**
+ * Render Bootstrap badge HTML for order status
+ *
+ * @param string $status
+ * @return string
+ */
+function order_status_badge(string $status): string {
+    $status = strtolower(trim($status));
+    return match ($status) {
+        'received'   => '<span class="badge bg-info-subtle text-info border border-info-subtle text-uppercase"><i class="bi bi-inbox me-1"></i>Received</span>',
+        'processing' => '<span class="badge bg-warning-subtle text-warning border border-warning-subtle text-uppercase"><i class="bi bi-gear me-1"></i>Processing</span>',
+        'ready'      => '<span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase"><i class="bi bi-check2-circle me-1"></i>Ready</span>',
+        'delivered'  => '<span class="badge bg-dark text-white border text-uppercase"><i class="bi bi-bag-check me-1"></i>Delivered</span>',
+        'cancelled'  => '<span class="badge bg-danger-subtle text-danger border border-danger-subtle text-uppercase"><i class="bi bi-x-circle me-1"></i>Cancelled</span>',
+        default      => '<span class="badge bg-secondary-subtle text-secondary border text-uppercase">' . e($status) . '</span>',
+    };
+}
+
+/**
+ * Render Bootstrap badge HTML for payment status
+ *
+ * @param string $status
+ * @return string
+ */
+function payment_status_badge(string $status): string {
+    $status = strtolower(trim($status));
+    return match ($status) {
+        'paid'    => '<span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase"><i class="bi bi-check-circle me-1"></i>Paid</span>',
+        'partial' => '<span class="badge bg-warning-subtle text-warning border border-warning-subtle text-uppercase"><i class="bi bi-pie-chart me-1"></i>Partial</span>',
+        'unpaid'  => '<span class="badge bg-danger-subtle text-danger border border-danger-subtle text-uppercase"><i class="bi bi-exclamation-circle me-1"></i>Unpaid</span>',
+        default   => '<span class="badge bg-secondary-subtle text-secondary border text-uppercase">' . e($status) . '</span>',
+    };
+}
+
+/**
+ * Format currency price
+ *
+ * @param float|string|null $price
+ * @param string $currency
+ * @return string
+ */
+function format_price(float|string|null $price, string $currency = '$'): string {
+    return $currency . number_format((float)($price ?? 0), 2);
 }
 
 /**

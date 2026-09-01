@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 02
+# Laundry Management System (`laundry-mgt`) — Phase 04
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -6,7 +6,7 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 ## 1. Project Purpose & Overview
 
-The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, orders, washing/ironing workflows, deliveries, invoices, and staff permissions.
+The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, deliveries, invoices, and staff permissions.
 
 ### Implemented Phases
 - **Phase 01: Foundation & Authentication System**
@@ -15,19 +15,29 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - User Profile Management (Name, Email, Phone, Password Change)
   - Secure Avatar Uploads (JPG, PNG, WebP with MIME validation)
   - Security Audit & Activity Logging (`activity_logs` table)
-  - Professional Business CMS UI (Solid color palette, no gradients)
   - Collapsible Desktop Sidebar with `localStorage` state persistence
   - Responsive Mobile Drawer Navigation
-- **Phase 02: Customer Management (NEW)**
-  - Customer Profile Management (Name, Phone, Email, Address, City, Postal Code, Notes)
+- **Phase 02: Customer Management**
+  - Customer Profiles (Name, Phone, Email, Address, City, Postal Code, Notes)
   - Unique Sequential Customer Code Generation (`CUS-000001`, `CUS-000002`...)
-  - Multi-field Search (`Customer Code`, `Name`, `Phone`, `Email`, `City`)
-  - Status Filter (`All`, `Active`, `Inactive`)
-  - Server-side Pagination (20 records per page) with query preservation
+  - Multi-field Search, Status Filter, and Server-side Pagination
   - Soft-Delete Protection (`deleted_at` timestamp)
-  - Duplicate Phone Validation
-  - Role-based Action Restrictions (Staff restricted from deleting customer records)
-  - Full Activity Logging on all Customer Actions
+  - Active Order History Integration inside Customer profile
+- **Phase 03: Laundry Services & Pricing Management**
+  - Service Category Management (`services` table: name, slug, description, pricing_type, status)
+  - Itemized Clothing & Garment Pricing (`service_items` table: item_name, unit, price, status, sort_order)
+  - Dual Pricing Models: **Per Item / Garment** and **Per KG Weight**
+  - Dynamic JavaScript Row Manager
+  - Database Transaction Safety (Atomically saves services and itemized rates)
+- **Phase 04: Laundry Order Management (NEW)**
+  - Full Order Intake Workflow (Customer selection, intake date, expected delivery date, handling notes)
+  - Dynamic Garment & Rate Calculator (Per Item rates and Per KG weight calculations in real time)
+  - **Server-Side Authoritative Pricing Security** (Client calculations provide instant UI feedback; server strictly recalculates all line totals, subtotals, discounts, totals, and balances from database rates)
+  - **Historical Pricing Snapshots** (`order_items` stores historical snapshots of service names, item names, and unit prices)
+  - Order Lifecycle Management (`received` -> `processing` -> `ready` -> `delivered` / `cancelled`)
+  - Order-Level Discounts and Initial Advance Payments with due balance calculation
+  - Professional Printable Receipt/Invoice (`print.php` with `@media print` styling)
+  - Server-Side Role Enforcement (Staff restricted from deleting orders)
 
 ---
 
@@ -80,6 +90,8 @@ laundry-mgt/
 ├── database/
 │   ├── phase_01_authentication.sql # Phase 01 roles, users, resets & audit logs schema
 │   ├── phase_02_customers.sql     # Phase 02 customers table & sample seed data
+│   ├── phase_03_services.sql      # Phase 03 services & service_items schema & seed data
+│   ├── phase_04_orders.sql        # Phase 04 orders & order_items schema & seed data
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -87,24 +99,46 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with active Customer navigation
+│   ├── sidebar.php                # Collapsible sidebar with active Orders navigation
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
-│   └── functions.php              # Global helpers (CSRF, escaping, URLs, customer codes)
+│   └── functions.php              # Global helpers (CSRF, order number generator, badges)
 │
 ├── modules/
 │   ├── dashboard/
-│   │   └── index.php              # Main Dashboard (User profile, customer metrics & roadmap)
+│   │   └── index.php              # Main Dashboard (User profile, customer, service & order metrics)
 │   │
 │   ├── customers/
 │   │   ├── index.php              # Customer listing with search, filter & pagination
 │   │   ├── create.php             # Add customer form
 │   │   ├── store.php              # Customer creation handler & validation
-│   │   ├── show.php               # Customer detail view & order history placeholder
+│   │   ├── show.php               # Customer detail view & real order history list
 │   │   ├── edit.php               # Customer edit form
 │   │   ├── update.php             # Customer update handler & validation
 │   │   ├── delete.php             # Soft delete handler (Admin/Manager only)
 │   │   └── toggle_status.php      # Customer status toggle handler
+│   │
+│   ├── services/
+│   │   ├── index.php              # Service catalog listing with search, filter & pagination
+│   │   ├── create.php             # Add service & item rates form
+│   │   ├── store.php              # Service store handler (Transaction-safe)
+│   │   ├── show.php               # Service details & itemized pricing table
+│   │   ├── edit.php               # Edit service & dynamic item rates form
+│   │   ├── update.php             # Service update handler (Transaction-safe)
+│   │   ├── delete.php             # Soft delete handler (Admin/Manager only)
+│   │   └── toggle_status.php      # Service status toggle handler
+│   │
+│   ├── orders/
+│   │   ├── index.php              # Orders list with search, status/payment filters & pagination
+│   │   ├── create.php             # New order intake with dynamic JS item rows
+│   │   ├── store.php              # Transaction-safe order store & authoritative price verification
+│   │   ├── show.php               # Order details profile, garment list & balance breakdown
+│   │   ├── edit.php               # Edit order form
+│   │   ├── update.php             # Order update handler (Transaction-safe)
+│   │   ├── update_status.php      # Order lifecycle status transition handler
+│   │   ├── delete.php             # Soft delete handler (Admin/Manager only)
+│   │   ├── print.php              # Printable invoice/receipt
+│   │   └── get_service_items.php  # Secure AJAX helper for cascading item dropdowns
 │   │
 │   └── profile/
 │       ├── index.php              # Profile management & settings view
@@ -125,79 +159,39 @@ laundry-mgt/
 
 ## 5. Database Setup & Installation
 
-### Step 1: Create Database
-Open phpMyAdmin (`http://localhost/phpmyadmin/`) or MySQL CLI:
-
-```sql
-CREATE DATABASE IF NOT EXISTS `laundry_mgt` 
-DEFAULT CHARACTER SET utf8mb4 
-COLLATE utf8mb4_unicode_ci;
-```
-
-### Step 2: Import SQL Files in Order
-1. Import `database/phase_01_authentication.sql`
-2. Import `database/phase_02_customers.sql`
+### Import SQL Files in Sequential Order:
+1. `database/phase_01_authentication.sql`
+2. `database/phase_02_customers.sql`
+3. `database/phase_03_services.sql`
+4. `database/phase_04_orders.sql`
 
 Via CLI:
 ```bash
 mysql -u root -p laundry_mgt < database/phase_01_authentication.sql
 mysql -u root -p laundry_mgt < database/phase_02_customers.sql
+mysql -u root -p laundry_mgt < database/phase_03_services.sql
+mysql -u root -p laundry_mgt < database/phase_04_orders.sql
 ```
 
 ---
 
-## 6. Default Administrator Credentials
+## 6. Roles & Permissions (Phase 01, 02, 03 & 04)
 
-| Field | Value |
-| :--- | :--- |
-| **Login URL** | `http://localhost/laundry-mgt/auth/login.php` |
-| **Email** | `admin@laundrymgt.com` |
-| **Password** | `Password123!` |
-| **Role** | `Administrator` |
-| **Status** | `active` |
+| Role | View / Search Orders | Create Order | Edit Order | Update Order Status | Print Receipt | Delete Order |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Administrator** | Yes | Yes | Yes | Yes | Yes | Yes |
+| **Manager** | Yes | Yes | Yes | Yes | Yes | Yes |
+| **Staff** | Yes | Yes | Yes | Yes | Yes | **No (403)** |
 
 ---
 
-## 7. Customer Management Features
-
-### Adding a Customer
-1. Navigate to **Customers** in the sidebar or top menu.
-2. Click **Add Customer**.
-3. Fill in **Customer Name** and **Phone Number** (Required), plus optional Email, Address, City, Postal Code, Notes, and Status.
-4. Click **Save Customer**. A unique `CUS-XXXXXX` code is automatically assigned.
-
-### Searching & Filtering Customers
-- Type any keyword in the search bar (`CUS-000001`, `Rahim`, `01711`, or `Dhaka`).
-- Use the status dropdown to filter by `Active` or `Inactive`.
-- Pagination preserves search and filter parameters across pages.
-
-### Editing & Status Toggling
-- Click the pencil icon on any customer row or the **Edit Customer** button on the details page.
-- Toggle status quickly using the status switch button or modal dialog.
-
-### Soft Deleting Customers
-- Only **Administrator** and **Manager** roles can delete customer records.
-- Deletion sets `deleted_at = NOW()`, preserving historical data integrity while removing the customer from active views.
-
----
-
-## 8. Roles & Permissions (Phase 01 & 02)
-
-| Role | View / Search | Create Customer | Edit Customer | Toggle Status | Delete Customer |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Administrator** | Yes | Yes | Yes | Yes | Yes |
-| **Manager** | Yes | Yes | Yes | Yes | Yes |
-| **Staff** | Yes | Yes | Yes | Yes | **No (403)** |
-
----
-
-## 9. Development Roadmap
+## 7. Development Roadmap
 
 - **Phase 01 (Complete):** Authentication, Role Access, Security Baseline
-- **Phase 02 (Complete):** Customer Management (Profiles, Search, Pagination, Soft Deletes)
-- **Phase 03:** Laundry Services & Pricing (Dry Cleaning, Wash & Fold, Ironing)
-- **Phase 04:** Laundry Orders & Tracking (Intake, Status, Pickup)
-- **Phase 05:** Payments & Invoicing (POS, Receipts, Payment Status)
+- **Phase 02 (Complete):** Customer Management (Profiles, Search, Pagination, History)
+- **Phase 03 (Complete):** Laundry Services & Pricing (Item Rates, Per KG, Dynamic JS Rows)
+- **Phase 04 (Complete):** Laundry Order Management (Intake, Real-time Calculator, Receipts)
+- **Phase 05:** Payments & Invoicing (POS, Payment Gateways, Payment History)
 - **Phase 06:** Reports & Analytics (Revenue, Operations, Daily Intake)
 - **Phase 07:** Staff Management & Role Permissions
 - **Phase 08:** System Settings & Equipment Management

@@ -28,6 +28,16 @@ if (!$customer) {
     redirect('modules/customers/index.php');
 }
 
+// Fetch real customer orders (Phase 04 integration)
+$orderStmt = $pdo->prepare('
+    SELECT id, order_number, order_date, expected_date, total, paid_amount, due_amount, status, payment_status
+    FROM orders
+    WHERE customer_id = :customer_id AND deleted_at IS NULL
+    ORDER BY id DESC
+');
+$orderStmt->execute(['customer_id' => $customerId]);
+$customerOrders = $orderStmt->fetchAll();
+
 $pageTitle = $customer['name'] . ' (' . $customer['customer_code'] . ')';
 
 require_once __DIR__ . '/../../includes/header.php';
@@ -56,6 +66,13 @@ require_once __DIR__ . '/../../includes/topbar.php';
 
         <!-- Action Buttons -->
         <div class="d-flex flex-wrap gap-2">
+            <!-- New Order for this Customer -->
+            <?php if ($customer['status'] === 'active'): ?>
+                <a href="<?= base_url('modules/orders/create.php?customer_id=' . (int)$customer['id']) ?>" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i> New Order
+                </a>
+            <?php endif; ?>
+
             <!-- Edit -->
             <a href="<?= base_url('modules/customers/edit.php?id=' . (int)$customer['id']) ?>" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-pencil me-1"></i> Edit Customer
@@ -119,8 +136,8 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         <span class="fw-semibold text-truncate" style="max-width: 170px;"><?= e($customer['email'] ?: 'Not provided') ?></span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between py-2 px-3">
-                        <span class="text-muted">City / Region</span>
-                        <span class="fw-semibold"><?= e($customer['city'] ?: 'Not provided') ?></span>
+                        <span class="text-muted">Total Orders Placed</span>
+                        <span class="fw-semibold font-monospace text-primary"><?= count($customerOrders) ?></span>
                     </li>
                 </ul>
             </div>
@@ -150,7 +167,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
-    <!-- Right Column: Contact, Address, Notes & Order History Placeholder -->
+    <!-- Right Column: Contact, Address, Notes & Real Order History -->
     <div class="col-12 col-lg-8">
         <!-- Contact & Address Card -->
         <div class="card shadow-sm mb-4">
@@ -209,18 +226,66 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
         </div>
 
-        <!-- Order History Placeholder Card (Phase 04) -->
+        <!-- Customer Order History Card (Active Phase 04 Feature) -->
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <h3 class="h6 mb-0 fw-semibold"><i class="bi bi-basket me-2 text-primary"></i>Order History</h3>
-                <span class="badge bg-secondary-subtle text-secondary border">Phase 04 Feature</span>
+                <h3 class="h6 mb-0 fw-semibold"><i class="bi bi-basket me-2 text-primary"></i>Laundry Order History</h3>
+                <span class="badge bg-light text-dark border font-monospace"><?= count($customerOrders) ?> order(s)</span>
             </div>
-            <div class="card-body text-center py-5">
-                <div class="text-muted">
-                    <i class="bi bi-basket3 fs-1 d-block mb-2 text-secondary"></i>
-                    <h5 class="fw-semibold mb-1">No laundry orders found for this customer</h5>
-                    <p class="small text-muted mb-0">Laundry order intake, processing, and payment tracking will be enabled in Phase 04.</p>
-                </div>
+            <div class="card-body p-0">
+                <?php if (empty($customerOrders)): ?>
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-basket3 fs-1 d-block mb-2 text-secondary"></i>
+                        <h5 class="fw-semibold mb-1">No orders found for this customer</h5>
+                        <p class="small text-muted mb-3">Get started by creating a new laundry intake order.</p>
+                        <?php if ($customer['status'] === 'active'): ?>
+                            <a href="<?= base_url('modules/orders/create.php?customer_id=' . (int)$customer['id']) ?>" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-lg me-1"></i> Create Order
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th class="ps-3">Order #</th>
+                                    <th>Order Date</th>
+                                    <th>Delivery Date</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-end">Due</th>
+                                    <th>Status</th>
+                                    <th>Payment</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($customerOrders as $ord): ?>
+                                    <tr>
+                                        <td class="ps-3 font-monospace fw-semibold">
+                                            <a href="<?= base_url('modules/orders/show.php?id=' . (int)$ord['id']) ?>" class="text-decoration-none">
+                                                <?= e($ord['order_number']) ?>
+                                            </a>
+                                        </td>
+                                        <td class="small text-muted"><?= e(format_datetime($ord['order_date'], 'M d, Y')) ?></td>
+                                        <td class="small fw-semibold"><?= e(format_datetime($ord['expected_date'], 'M d, Y')) ?></td>
+                                        <td class="text-end font-monospace fw-bold text-dark"><?= e(format_price($ord['total'])) ?></td>
+                                        <td class="text-end font-monospace <?= (float)$ord['due_amount'] > 0 ? 'text-danger fw-bold' : 'text-muted' ?> small">
+                                            <?= e(format_price($ord['due_amount'])) ?>
+                                        </td>
+                                        <td><?= order_status_badge($ord['status']) ?></td>
+                                        <td><?= payment_status_badge($ord['payment_status']) ?></td>
+                                        <td class="text-end pe-3">
+                                            <a href="<?= base_url('modules/orders/show.php?id=' . (int)$ord['id']) ?>" class="btn btn-outline-secondary btn-sm py-0 px-2" title="View Order">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

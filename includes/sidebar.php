@@ -7,7 +7,9 @@
 $currentScript = $_SERVER['SCRIPT_NAME'] ?? '';
 $isDashboardActive = str_contains($currentScript, 'dashboard');
 $isCustomersActive = str_contains($currentScript, 'customers');
-$isProfileActive = str_contains($currentScript, 'profile');
+$isServicesActive  = str_contains($currentScript, 'services');
+$isOrdersActive    = str_contains($currentScript, 'orders');
+$isProfileActive   = str_contains($currentScript, 'profile');
 ?>
 <nav id="sidebar">
     <!-- Brand Logo -->
@@ -46,31 +48,27 @@ $isProfileActive = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Laundry Services (Phase 03) -->
+        <!-- Laundry Services (Active in Phase 03) -->
         <li class="nav-item">
-            <a href="javascript:void(0);" 
-               class="nav-link disabled" 
-               aria-disabled="true"
+            <a href="<?= base_url('modules/services/index.php') ?>" 
+               class="nav-link <?= $isServicesActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Services (Phase 03)">
+               data-bs-title="Services">
                 <i class="bi bi-tags-fill"></i>
                 <span class="link-text">Services</span>
-                <span class="badge bg-secondary">Phase 3</span>
             </a>
         </li>
 
-        <!-- Orders (Phase 04) -->
+        <!-- Orders (Active in Phase 04) -->
         <li class="nav-item">
-            <a href="javascript:void(0);" 
-               class="nav-link disabled" 
-               aria-disabled="true"
+            <a href="<?= base_url('modules/orders/index.php') ?>" 
+               class="nav-link <?= $isOrdersActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Orders (Phase 04)">
+               data-bs-title="Orders">
                 <i class="bi bi-basket-fill"></i>
                 <span class="link-text">Orders</span>
-                <span class="badge bg-secondary">Phase 4</span>
             </a>
         </li>
 
