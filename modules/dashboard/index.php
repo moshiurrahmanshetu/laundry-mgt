@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard View (Phase 01 through Phase 06 Active)
+ * Dashboard View (Phase 01 through Phase 07 Active)
  * Project: Laundry Management System (laundry-mgt)
  */
 
@@ -59,7 +59,7 @@ try {
 } catch (PDOException $e) {}
 
 try {
-    // Phase 06 Active Pickup & Delivery requests
+    // Active Pickup & Delivery requests
     $delStmt = $pdo->query("SELECT COUNT(*) FROM pickup_deliveries WHERE status IN ('pending', 'assigned', 'in_progress') AND deleted_at IS NULL");
     $pendingDeliveries = (int)$delStmt->fetchColumn();
 } catch (PDOException $e) {}
@@ -89,17 +89,17 @@ require_once __DIR__ . '/../../includes/topbar.php';
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
+                    <a href="<?= base_url('modules/operations/index.php') ?>" class="btn btn-warning btn-sm fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i> Operations Queue
+                    </a>
                     <a href="<?= base_url('modules/delivery/create.php') ?>" class="btn btn-outline-dark btn-sm">
-                        <i class="bi bi-truck me-1"></i> Dispatch Request
+                        <i class="bi bi-truck me-1"></i> Dispatch
                     </a>
                     <a href="<?= base_url('modules/payments/create.php') ?>" class="btn btn-success btn-sm">
                         <i class="bi bi-credit-card-fill me-1"></i> Receive Payment
                     </a>
                     <a href="<?= base_url('modules/orders/create.php') ?>" class="btn btn-primary btn-sm">
                         <i class="bi bi-plus-lg me-1"></i> New Order
-                    </a>
-                    <a href="<?= base_url('modules/customers/create.php') ?>" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-person-plus me-1"></i> Add Customer
                     </a>
                 </div>
             </div>
@@ -128,8 +128,8 @@ require_once __DIR__ . '/../../includes/topbar.php';
                 </div>
             </div>
             <div class="card-footer bg-light py-2">
-                <a href="<?= base_url('modules/orders/index.php') ?>" class="small text-decoration-none fw-semibold">
-                    View Orders <i class="bi bi-arrow-right ms-1"></i>
+                <a href="<?= base_url('modules/operations/index.php') ?>" class="small text-decoration-none fw-semibold">
+                    Manage Workflow <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             </div>
         </div>
@@ -160,7 +160,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
-    <!-- Active Pickups & Deliveries (Phase 06 Metric Card) -->
+    <!-- Active Pickups & Deliveries -->
     <div class="col-12 col-md-6 col-xl-3">
         <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
@@ -220,49 +220,63 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Phases 01 through 06 are active in production mode:
+                    Phases 01 through 07 are active in production mode:
                 </p>
                 <div class="row g-3 text-center">
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 1 (Active)</span>
                             <div class="fw-bold text-dark small">Auth &amp; Foundation</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Users, Security</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 2 (Active)</span>
                             <div class="fw-bold text-dark small">Customers</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Profiles, Search</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 3 (Active)</span>
                             <div class="fw-bold text-dark small">Services &amp; Pricing</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Per Item / Per KG</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 4 (Active)</span>
                             <div class="fw-bold text-dark small">Order Intake</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Lifecycle, Orders</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 5 (Active)</span>
                             <div class="fw-bold text-dark small">Payments</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Multi-pay, Vouchers</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-4 col-lg-2">
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light">
                             <span class="badge bg-success mb-2">Phase 6 (Active)</span>
                             <div class="fw-bold text-dark small">Pickup &amp; Delivery</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Dispatch &amp; Slips</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 7 (Active)</span>
+                            <div class="fw-bold text-dark small">Laundry Operations</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Queue &amp; Workflow</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="p-3 border rounded bg-light opacity-75">
+                            <span class="badge bg-secondary mb-2">Phase 8 (Next)</span>
+                            <div class="fw-bold text-muted small">Reports</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Analytics &amp; Sales</small>
                         </div>
                     </div>
                 </div>

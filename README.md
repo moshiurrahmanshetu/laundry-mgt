@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 06
+# Laundry Management System (`laundry-mgt`) — Phase 07
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -6,7 +6,7 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 ## 1. Project Purpose & Overview
 
-The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, and staff permissions.
+The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, and staff permissions.
 
 ### Implemented Phases
 - **Phase 01: Foundation & Authentication System**
@@ -45,7 +45,7 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Safe Audit Voiding: Completed payments are never physically destroyed; Administrators can void payments (`status = 'voided'`), which restores order balances and logs audit trails in `activity_logs`
   - Integrated Payment History section on Order Details view with `[ + Receive Payment ]` quick actions
   - Printable Payment Receipt Voucher (`print.php`)
-- **Phase 06: Laundry Pickup & Delivery Management (NEW)**
+- **Phase 06: Laundry Pickup & Delivery Management**
   - Consolidated Schedule System (`pickup_deliveries` table handling both `pickup` and `delivery`)
   - Unique Sequential Reference Generation (`PU-000001`, `DL-000001`...)
   - Permanent Location Snapshots (Service address, contact name, and contact phone are snapshotted in `pickup_deliveries` at creation time)
@@ -53,8 +53,16 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Dispatch Lifecycle Management: `pending` -> `assigned` -> `in_progress` -> `completed` / `cancelled` (with automated `completed_at` timestamping)
   - Staff Assignment Workflow: Assigning active operational staff automatically updates status to `assigned`
   - Role-Based Operational Security: Administrators & Managers can assign staff and edit/delete schedules; Staff can view assigned requests, update status, and print slips
-  - Printable Pickup / Delivery Slip (`print.php` with itemized garments list and driver/recipient signature lines)
-  - Integrated Schedule Section on Order Details view with quick `+ Pickup` and `+ Delivery` action buttons
+  - Printable Pickup / Delivery Slip (`print.php` with itemized garments list and signature lines)
+- **Phase 07: Laundry Operations & Workflow Management (NEW)**
+  - Dedicated Operational Workflow Queue (`modules/operations/index.php`)
+  - Dynamic Real-Time Counters (Received, Processing, Ready, Out for Delivery, Delivered, Cancelled)
+  - Context-Sensitive Quick Action Transitions (`[ Start Wash ]` -> `[ Mark Ready ]` -> `[ Deliver ]`)
+  - Concurrency & Race Condition Protection: Row-level locking `SELECT ... FOR UPDATE` inside database transactions guarantees stale or conflicting updates are rejected safely
+  - Visual Step Timeline on Operations Details (`show.php` with highlighted stages)
+  - Audit Trail Tracking: Real-time operational transition events recorded and displayed from `activity_logs`
+  - Printable Operations Work Order (`print.php` with garment checklist and quality assurance signature boxes)
+  - Integrated Logistics Tracking: Shows active pickup/delivery dispatch state directly on the operational queue
 
 ---
 
@@ -111,6 +119,7 @@ laundry-mgt/
 │   ├── phase_04_orders.sql        # Phase 04 orders & order_items schema & seed data
 │   ├── phase_05_payments.sql      # Phase 05 payments table & seed data
 │   ├── phase_06_delivery.sql      # Phase 06 pickup_deliveries table & seed data
+│   ├── phase_07_operations.sql    # Phase 07 operations & workflow documentation
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -118,14 +127,20 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with active Pickup & Delivery navigation
+│   ├── sidebar.php                # Collapsible sidebar with active Operations navigation
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
 │   └── functions.php              # Global helpers (CSRF, numbering, reference badges, summary helpers)
 │
 ├── modules/
 │   ├── dashboard/
-│   │   └── index.php              # Main Dashboard (User profile, customer, service, order, payment & delivery metrics)
+│   │   └── index.php              # Main Dashboard (User profile, operations, orders, payments & customer metrics)
+│   │
+│   ├── operations/
+│   │   ├── index.php              # Operations dashboard, stage filters, quick transitions & orders table
+│   │   ├── show.php               # Operations order profile with visual stage timeline & activity logs
+│   │   ├── update_status.php      # Concurrency-safe status advance handler (FOR UPDATE row locking)
+│   │   └── print.php              # Printable operations work order with garment checklist & QA signatures
 │   │
 │   ├── customers/
 │   │   ├── index.php              # Customer listing with search, filter & pagination
@@ -207,6 +222,7 @@ laundry-mgt/
 4. `database/phase_04_orders.sql`
 5. `database/phase_05_payments.sql`
 6. `database/phase_06_delivery.sql`
+7. `database/phase_07_operations.sql`
 
 Via CLI:
 ```bash
@@ -220,18 +236,16 @@ mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
 
 ---
 
-## 6. Roles & Permissions (Phase 01 — 06)
+## 6. Roles & Permissions (Phase 01 — 07)
 
 | Module Action | Administrator | Manager | Staff |
 | :--- | :---: | :---: | :---: |
-| **View / Search Schedules** | All | All | Assigned / Created |
-| **Create Schedule Request** | Yes | Yes | Yes |
-| **Print Pickup/Delivery Slip** | Yes | Yes | Yes |
-| **Update Status** | Yes | Yes | Assigned Requests |
-| **Assign / Reassign Staff** | Yes | Yes | **No (403)** |
-| **Edit Schedule Details** | Yes | Yes | **No (403)** |
-| **Delete Schedule Request** | Yes | Yes | **No (403)** |
-| **Receive Payment** | Yes | Yes | Yes |
+| **View Operations Queue** | All | All | Authorized Orders |
+| **Advance Next Workflow Stage** | Yes | Yes | Yes |
+| **Reopen Delivered/Cancelled Order** | Yes | Yes | **No (403)** |
+| **Print Work Order Slip** | Yes | Yes | Yes |
+| **Assign Delivery Staff** | Yes | Yes | **No (403)** |
+| **Delete Order / Schedule** | Yes | Yes | **No (403)** |
 | **Void Payment** | Yes | **No (403)** | **No (403)** |
 | **Manage Services & Pricing** | Yes | Yes | **No (403)** |
 
@@ -245,6 +259,7 @@ mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
 - **Phase 04 (Complete):** Laundry Order Management (Intake, Real-time Calculator, Invoices)
 - **Phase 05 (Complete):** Payment Management (Multi-pay, Vouchers, Concurrency, Voiding)
 - **Phase 06 (Complete):** Laundry Pickup & Delivery (Dispatch, Address Snapshots, Slips)
-- **Phase 07:** Reports & Analytics (Revenue, Operations, Daily Intake)
-- **Phase 08:** Staff Management & Role Permissions
-- **Phase 09:** System Settings & Equipment Management
+- **Phase 07 (Complete):** Laundry Operations (Workflow Queue, Visual Timeline, Work Orders)
+- **Phase 08:** Reports & Analytics (Revenue, Operations, Daily Intake)
+- **Phase 09:** Staff Management & Role Permissions
+- **Phase 10:** System Settings & Equipment Management

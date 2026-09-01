@@ -40,6 +40,10 @@ File: [`phase_05_payments.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/pha
 File: [`phase_06_delivery.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_06_delivery.sql)
 - `pickup_deliveries` — Customer laundry pickup and delivery requests, address snapshots, staff assignments, and delivery lifecycle tracking
 
+### Phase 07: Laundry Operations & Workflow Management
+File: [`phase_07_operations.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_07_operations.sql)
+- Centralizes operational stage transitions (`received` -> `processing` -> `ready` -> `delivered`) over existing relational tables without duplicate schemas.
+
 ---
 
 ## How to Import

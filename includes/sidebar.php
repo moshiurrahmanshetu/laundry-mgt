@@ -4,14 +4,15 @@
  * Project: Laundry Management System (laundry-mgt)
  */
 
-$currentScript = $_SERVER['SCRIPT_NAME'] ?? '';
-$isDashboardActive = str_contains($currentScript, 'dashboard');
-$isCustomersActive = str_contains($currentScript, 'customers');
-$isServicesActive  = str_contains($currentScript, 'services');
-$isOrdersActive    = str_contains($currentScript, 'orders');
-$isPaymentsActive  = str_contains($currentScript, 'payments');
-$isDeliveryActive  = str_contains($currentScript, 'delivery');
-$isProfileActive   = str_contains($currentScript, 'profile');
+$currentScript      = $_SERVER['SCRIPT_NAME'] ?? '';
+$isDashboardActive  = str_contains($currentScript, 'dashboard');
+$isOperationsActive = str_contains($currentScript, 'operations');
+$isCustomersActive  = str_contains($currentScript, 'customers');
+$isServicesActive   = str_contains($currentScript, 'services');
+$isOrdersActive     = str_contains($currentScript, 'orders');
+$isPaymentsActive   = str_contains($currentScript, 'payments');
+$isDeliveryActive   = str_contains($currentScript, 'delivery');
+$isProfileActive    = str_contains($currentScript, 'profile');
 ?>
 <nav id="sidebar">
     <!-- Brand Logo -->
@@ -36,31 +37,19 @@ $isProfileActive   = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <li class="nav-header">Laundry Operations</li>
-
-        <!-- Customers (Active in Phase 02) -->
+        <!-- Laundry Operations (Active in Phase 07) -->
         <li class="nav-item">
-            <a href="<?= base_url('modules/customers/index.php') ?>" 
-               class="nav-link <?= $isCustomersActive ? 'active' : '' ?>"
+            <a href="<?= base_url('modules/operations/index.php') ?>" 
+               class="nav-link <?= $isOperationsActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Customers">
-                <i class="bi bi-people-fill"></i>
-                <span class="link-text">Customers</span>
+               data-bs-title="Laundry Operations">
+                <i class="bi bi-arrow-repeat"></i>
+                <span class="link-text">Operations</span>
             </a>
         </li>
 
-        <!-- Laundry Services (Active in Phase 03) -->
-        <li class="nav-item">
-            <a href="<?= base_url('modules/services/index.php') ?>" 
-               class="nav-link <?= $isServicesActive ? 'active' : '' ?>"
-               data-bs-toggle="tooltip" 
-               data-bs-placement="right" 
-               data-bs-title="Services">
-                <i class="bi bi-tags-fill"></i>
-                <span class="link-text">Services</span>
-            </a>
-        </li>
+        <li class="nav-header">Laundry Management</li>
 
         <!-- Orders (Active in Phase 04) -->
         <li class="nav-item">
@@ -98,17 +87,41 @@ $isProfileActive   = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Reports (Phase 07) -->
+        <!-- Customers (Active in Phase 02) -->
+        <li class="nav-item">
+            <a href="<?= base_url('modules/customers/index.php') ?>" 
+               class="nav-link <?= $isCustomersActive ? 'active' : '' ?>"
+               data-bs-toggle="tooltip" 
+               data-bs-placement="right" 
+               data-bs-title="Customers">
+                <i class="bi bi-people-fill"></i>
+                <span class="link-text">Customers</span>
+            </a>
+        </li>
+
+        <!-- Laundry Services (Active in Phase 03) -->
+        <li class="nav-item">
+            <a href="<?= base_url('modules/services/index.php') ?>" 
+               class="nav-link <?= $isServicesActive ? 'active' : '' ?>"
+               data-bs-toggle="tooltip" 
+               data-bs-placement="right" 
+               data-bs-title="Services">
+                <i class="bi bi-tags-fill"></i>
+                <span class="link-text">Services</span>
+            </a>
+        </li>
+
+        <!-- Reports (Phase 08) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Reports (Phase 07)">
+               data-bs-title="Reports (Phase 08)">
                 <i class="bi bi-bar-chart-line-fill"></i>
                 <span class="link-text">Reports</span>
-                <span class="badge bg-secondary">Phase 7</span>
+                <span class="badge bg-secondary">Phase 8</span>
             </a>
         </li>
 
@@ -126,31 +139,31 @@ $isProfileActive   = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Staff & Roles (Phase 08) -->
+        <!-- Staff & Roles (Phase 09) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Staff & Roles (Phase 08)">
+               data-bs-title="Staff & Roles (Phase 09)">
                 <i class="bi bi-shield-lock-fill"></i>
                 <span class="link-text">Staff &amp; Roles</span>
-                <span class="badge bg-secondary">Phase 8</span>
+                <span class="badge bg-secondary">Phase 9</span>
             </a>
         </li>
 
-        <!-- Settings (Phase 09) -->
+        <!-- Settings (Phase 10) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Settings (Phase 09)">
+               data-bs-title="Settings (Phase 10)">
                 <i class="bi bi-gear-fill"></i>
                 <span class="link-text">Settings</span>
-                <span class="badge bg-secondary">Phase 9</span>
+                <span class="badge bg-secondary">Phase 10</span>
             </a>
         </li>
     </ul>
