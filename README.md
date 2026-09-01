@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 07
+# Laundry Management System (`laundry-mgt`) — Phase 08
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -6,7 +6,7 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 ## 1. Project Purpose & Overview
 
-The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, and staff permissions.
+The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, real-time business reports, and staff permissions.
 
 ### Implemented Phases
 - **Phase 01: Foundation & Authentication System**
@@ -54,7 +54,7 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Staff Assignment Workflow: Assigning active operational staff automatically updates status to `assigned`
   - Role-Based Operational Security: Administrators & Managers can assign staff and edit/delete schedules; Staff can view assigned requests, update status, and print slips
   - Printable Pickup / Delivery Slip (`print.php` with itemized garments list and signature lines)
-- **Phase 07: Laundry Operations & Workflow Management (NEW)**
+- **Phase 07: Laundry Operations & Workflow Management**
   - Dedicated Operational Workflow Queue (`modules/operations/index.php`)
   - Dynamic Real-Time Counters (Received, Processing, Ready, Out for Delivery, Delivered, Cancelled)
   - Context-Sensitive Quick Action Transitions (`[ Start Wash ]` -> `[ Mark Ready ]` -> `[ Deliver ]`)
@@ -62,7 +62,17 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Visual Step Timeline on Operations Details (`show.php` with highlighted stages)
   - Audit Trail Tracking: Real-time operational transition events recorded and displayed from `activity_logs`
   - Printable Operations Work Order (`print.php` with garment checklist and quality assurance signature boxes)
-  - Integrated Logistics Tracking: Shows active pickup/delivery dispatch state directly on the operational queue
+- **Phase 08: Laundry Reports & Analytics (NEW)**
+  - Comprehensive Business Overview Report (`modules/reports/index.php`) with real-time KPI metrics (Gross Sales, Direct Collections, Receivables Due, Order Volume, Customer Growth, Deliveries).
+  - Pure CSS Horizontal Distribution Bars (Order Stage Breakdown, Payment Settlement Breakdown) without any external chart libraries or gradients.
+  - Sales & Revenue Report (`modules/reports/sales.php`): Daily sales aggregation, order counts, gross volume, collections, and customer balances.
+  - Order Operations Report (`modules/reports/orders.php`): Stage throughput flow and daily completion rates.
+  - Payment Collections Report (`modules/reports/payments.php`): Multi-channel payment analysis (Cash, Card, Mobile Banking, Bank Transfer) with receipt transactions log.
+  - Customer Performance Report (`modules/reports/customers.php`): Registration acquisition velocity and Top 10 client rankings.
+  - Services Demand Report (`modules/reports/services.php`): Itemized garment volume and category revenue generation.
+  - Logistics Fulfillment Report (`modules/reports/delivery.php`): Dispatch schedule volume and route fulfillment success rates.
+  - Standardized Date Filter Presets: Today, Yesterday, This Week, This Month, Last Month, This Year, All Time, Custom Range.
+  - Role Guarding: Direct URL access protection restricts financial reports to Administrators and Managers.
 
 ---
 
@@ -120,6 +130,7 @@ laundry-mgt/
 │   ├── phase_05_payments.sql      # Phase 05 payments table & seed data
 │   ├── phase_06_delivery.sql      # Phase 06 pickup_deliveries table & seed data
 │   ├── phase_07_operations.sql    # Phase 07 operations & workflow documentation
+│   ├── phase_08_reports.sql       # Phase 08 reports & analytics documentation
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -127,14 +138,23 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with active Operations navigation
+│   ├── sidebar.php                # Collapsible sidebar with active Reports navigation
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
-│   └── functions.php              # Global helpers (CSRF, numbering, reference badges, summary helpers)
+│   └── functions.php              # Global helpers (CSRF, numbering, report date parser, badges)
 │
 ├── modules/
 │   ├── dashboard/
-│   │   └── index.php              # Main Dashboard (User profile, operations, orders, payments & customer metrics)
+│   │   └── index.php              # Main Dashboard (User profile, operations, reports, orders & metrics)
+│   │
+│   ├── reports/
+│   │   ├── index.php              # Overview report dashboard, KPI cards & CSS distribution bars
+│   │   ├── sales.php              # Sales & revenue report with daily aggregation (Admin/Manager)
+│   │   ├── orders.php             # Orders report with stage breakdown & daily intake flow
+│   │   ├── payments.php           # Payment collections & payment method breakdown (Admin/Manager)
+│   │   ├── customers.php          # Customer performance report & top 10 spenders
+│   │   ├── services.php           # Service category & garment demand analytics
+│   │   └── delivery.php           # Pickup & delivery fulfillment logistics report
 │   │
 │   ├── operations/
 │   │   ├── index.php              # Operations dashboard, stage filters, quick transitions & orders table
@@ -223,29 +243,20 @@ laundry-mgt/
 5. `database/phase_05_payments.sql`
 6. `database/phase_06_delivery.sql`
 7. `database/phase_07_operations.sql`
-
-Via CLI:
-```bash
-mysql -u root -p laundry_mgt < database/phase_01_authentication.sql
-mysql -u root -p laundry_mgt < database/phase_02_customers.sql
-mysql -u root -p laundry_mgt < database/phase_03_services.sql
-mysql -u root -p laundry_mgt < database/phase_04_orders.sql
-mysql -u root -p laundry_mgt < database/phase_05_payments.sql
-mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
-```
+8. `database/phase_08_reports.sql`
 
 ---
 
-## 6. Roles & Permissions (Phase 01 — 07)
+## 6. Roles & Permissions (Phase 01 — 08)
 
 | Module Action | Administrator | Manager | Staff |
 | :--- | :---: | :---: | :---: |
-| **View Operations Queue** | All | All | Authorized Orders |
+| **View Financial Reports (Sales, Payments)** | Yes | Yes | **No (403)** |
+| **View Operational Reports (Overview, Orders, Services, Delivery, Customers)** | Yes | Yes | Yes |
+| **Print Business Reports** | Yes | Yes | Yes |
 | **Advance Next Workflow Stage** | Yes | Yes | Yes |
 | **Reopen Delivered/Cancelled Order** | Yes | Yes | **No (403)** |
-| **Print Work Order Slip** | Yes | Yes | Yes |
 | **Assign Delivery Staff** | Yes | Yes | **No (403)** |
-| **Delete Order / Schedule** | Yes | Yes | **No (403)** |
 | **Void Payment** | Yes | **No (403)** | **No (403)** |
 | **Manage Services & Pricing** | Yes | Yes | **No (403)** |
 
@@ -260,6 +271,6 @@ mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
 - **Phase 05 (Complete):** Payment Management (Multi-pay, Vouchers, Concurrency, Voiding)
 - **Phase 06 (Complete):** Laundry Pickup & Delivery (Dispatch, Address Snapshots, Slips)
 - **Phase 07 (Complete):** Laundry Operations (Workflow Queue, Visual Timeline, Work Orders)
-- **Phase 08:** Reports & Analytics (Revenue, Operations, Daily Intake)
+- **Phase 08 (Complete):** Reports & Analytics (Sales, Payments, Delivery, Customers, Services)
 - **Phase 09:** Staff Management & Role Permissions
 - **Phase 10:** System Settings & Equipment Management

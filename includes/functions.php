@@ -684,3 +684,81 @@ function get_user_initials(string $name): string {
     }
     return $initials ?: 'U';
 }
+
+/**
+ * Parse and validate standard report date range parameters
+ *
+ * @param array $queryParams
+ * @param string $defaultPreset
+ * @return array ['preset', 'start_date', 'end_date', 'label']
+ */
+function get_report_date_range(array $queryParams = [], string $defaultPreset = 'this_month'): array {
+    $preset = sanitize_input($queryParams['range'] ?? $defaultPreset);
+    $startDate = sanitize_input($queryParams['start_date'] ?? '');
+    $endDate = sanitize_input($queryParams['end_date'] ?? '');
+
+    $today = date('Y-m-d');
+    $label = 'This Month';
+
+    switch ($preset) {
+        case 'today':
+            $startDate = $today;
+            $endDate = $today;
+            $label = 'Today (' . date('M d, Y') . ')';
+            break;
+        case 'yesterday':
+            $startDate = date('Y-m-d', strtotime('-1 day'));
+            $endDate = date('Y-m-d', strtotime('-1 day'));
+            $label = 'Yesterday (' . date('M d, Y', strtotime('-1 day')) . ')';
+            break;
+        case 'this_week':
+            $startDate = date('Y-m-d', strtotime('monday this week'));
+            $endDate = $today;
+            $label = 'This Week (' . date('M d', strtotime($startDate)) . ' - ' . date('M d, Y', strtotime($endDate)) . ')';
+            break;
+        case 'last_month':
+            $startDate = date('Y-m-01', strtotime('first day of last month'));
+            $endDate = date('Y-m-t', strtotime('last day of last month'));
+            $label = 'Last Month (' . date('F Y', strtotime($startDate)) . ')';
+            break;
+        case 'this_year':
+            $startDate = date('Y-01-01');
+            $endDate = $today;
+            $label = 'This Year (' . date('Y') . ')';
+            break;
+        case 'all_time':
+            $startDate = '2020-01-01';
+            $endDate = $today;
+            $label = 'All Time';
+            break;
+        case 'custom':
+            if (empty($startDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) {
+                $startDate = date('Y-m-01');
+            }
+            if (empty($endDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
+                $endDate = $today;
+            }
+            if ($startDate > $endDate) {
+                $temp = $startDate;
+                $startDate = $endDate;
+                $endDate = $temp;
+            }
+            $label = 'Custom (' . date('M d, Y', strtotime($startDate)) . ' - ' . date('M d, Y', strtotime($endDate)) . ')';
+            break;
+        case 'this_month':
+        default:
+            $preset = 'this_month';
+            $startDate = date('Y-m-01');
+            $endDate = $today;
+            $label = 'This Month (' . date('F Y') . ')';
+            break;
+    }
+
+    return [
+        'preset'     => $preset,
+        'start_date' => $startDate,
+        'end_date'   => $endDate,
+        'label'      => $label
+    ];
+}
+

@@ -7,11 +7,12 @@
 $currentScript      = $_SERVER['SCRIPT_NAME'] ?? '';
 $isDashboardActive  = str_contains($currentScript, 'dashboard');
 $isOperationsActive = str_contains($currentScript, 'operations');
-$isCustomersActive  = str_contains($currentScript, 'customers');
-$isServicesActive   = str_contains($currentScript, 'services');
 $isOrdersActive     = str_contains($currentScript, 'orders');
 $isPaymentsActive   = str_contains($currentScript, 'payments');
 $isDeliveryActive   = str_contains($currentScript, 'delivery');
+$isCustomersActive  = str_contains($currentScript, 'customers');
+$isServicesActive   = str_contains($currentScript, 'services');
+$isReportsActive    = str_contains($currentScript, 'reports');
 $isProfileActive    = str_contains($currentScript, 'profile');
 ?>
 <nav id="sidebar">
@@ -111,17 +112,15 @@ $isProfileActive    = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Reports (Phase 08) -->
+        <!-- Reports & Analytics (Active in Phase 08) -->
         <li class="nav-item">
-            <a href="javascript:void(0);" 
-               class="nav-link disabled" 
-               aria-disabled="true"
+            <a href="<?= base_url('modules/reports/index.php') ?>" 
+               class="nav-link <?= $isReportsActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Reports (Phase 08)">
+               data-bs-title="Reports & Analytics">
                 <i class="bi bi-bar-chart-line-fill"></i>
                 <span class="link-text">Reports</span>
-                <span class="badge bg-secondary">Phase 8</span>
             </a>
         </li>
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard View (Phase 01 through Phase 07 Active)
+ * Dashboard View (Phase 01 through Phase 08 Active)
  * Project: Laundry Management System (laundry-mgt)
  */
 
@@ -89,10 +89,13 @@ require_once __DIR__ . '/../../includes/topbar.php';
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
+                    <a href="<?= base_url('modules/reports/index.php') ?>" class="btn btn-outline-dark btn-sm">
+                        <i class="bi bi-bar-chart-line-fill me-1"></i> View Reports
+                    </a>
                     <a href="<?= base_url('modules/operations/index.php') ?>" class="btn btn-warning btn-sm fw-semibold">
                         <i class="bi bi-arrow-repeat me-1"></i> Operations Queue
                     </a>
-                    <a href="<?= base_url('modules/delivery/create.php') ?>" class="btn btn-outline-dark btn-sm">
+                    <a href="<?= base_url('modules/delivery/create.php') ?>" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-truck me-1"></i> Dispatch
                     </a>
                     <a href="<?= base_url('modules/payments/create.php') ?>" class="btn btn-success btn-sm">
@@ -220,7 +223,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Phases 01 through 07 are active in production mode:
+                    Phases 01 through 08 are active in production mode:
                 </p>
                 <div class="row g-3 text-center">
                     <div class="col-6 col-md-4 col-lg-3">
@@ -273,10 +276,17 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         </div>
                     </div>
                     <div class="col-6 col-md-4 col-lg-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 8 (Active)</span>
+                            <div class="fw-bold text-dark small">Reports &amp; Analytics</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Sales, Charts, KPI</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light opacity-75">
-                            <span class="badge bg-secondary mb-2">Phase 8 (Next)</span>
-                            <div class="fw-bold text-muted small">Reports</div>
-                            <small class="text-muted" style="font-size: 0.75rem;">Analytics &amp; Sales</small>
+                            <span class="badge bg-secondary mb-2">Phase 9 (Next)</span>
+                            <div class="fw-bold text-muted small">Staff &amp; Roles</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Permissions, Access</small>
                         </div>
                     </div>
                 </div>

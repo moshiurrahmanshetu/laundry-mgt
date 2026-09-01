@@ -194,7 +194,7 @@ a:hover {
 }
 
 .nav-link:hover {
-    color: var(--sidebar-text-hover);
+    color: var(--sidebar-text-hover) !important;
     background-color: var(--sidebar-hover);
     text-decoration: none;
 }

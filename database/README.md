@@ -44,6 +44,10 @@ File: [`phase_06_delivery.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/pha
 File: [`phase_07_operations.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_07_operations.sql)
 - Centralizes operational stage transitions (`received` -> `processing` -> `ready` -> `delivered`) over existing relational tables without duplicate schemas.
 
+### Phase 08: Laundry Reports & Analytics
+File: [`phase_08_reports.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_08_reports.sql)
+- Real-time business intelligence and multi-dimensional reporting across existing tables with zero duplicate schemas.
+
 ---
 
 ## How to Import
