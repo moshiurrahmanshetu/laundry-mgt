@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 01
+# Laundry Management System (`laundry-mgt`) — Phase 02
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -8,17 +8,26 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, orders, washing/ironing workflows, deliveries, invoices, and staff permissions.
 
-**Phase 01 (Foundation & Authentication System)** establishes:
-- Complete Authentication System (Login, Secure Session, Logout, Password Recovery)
-- Relational Role-Based Access Control (`roles` table: Administrator, Manager, Staff)
-- User Profile Management (Name, Email, Phone)
-- Secure Avatar Uploads (JPG, PNG, WebP with MIME validation)
-- Password Change & Verification
-- Security Audit & Activity Logging (`activity_logs` table)
-- Professional Business CMS UI (Solid color palette, no gradients)
-- Collapsible Desktop Sidebar with `localStorage` state persistence
-- Responsive Mobile Drawer Navigation
-- Comprehensive Security Baseline (CSRF, PDO Prepared Statements, Timing-Safe Password Hashing, XSS Escaping, Upload Guards)
+### Implemented Phases
+- **Phase 01: Foundation & Authentication System**
+  - Authentication System (Login, Secure Session, Logout, Password Recovery)
+  - Relational Role-Based Access Control (`roles` table: Administrator, Manager, Staff)
+  - User Profile Management (Name, Email, Phone, Password Change)
+  - Secure Avatar Uploads (JPG, PNG, WebP with MIME validation)
+  - Security Audit & Activity Logging (`activity_logs` table)
+  - Professional Business CMS UI (Solid color palette, no gradients)
+  - Collapsible Desktop Sidebar with `localStorage` state persistence
+  - Responsive Mobile Drawer Navigation
+- **Phase 02: Customer Management (NEW)**
+  - Customer Profile Management (Name, Phone, Email, Address, City, Postal Code, Notes)
+  - Unique Sequential Customer Code Generation (`CUS-000001`, `CUS-000002`...)
+  - Multi-field Search (`Customer Code`, `Name`, `Phone`, `Email`, `City`)
+  - Status Filter (`All`, `Active`, `Inactive`)
+  - Server-side Pagination (20 records per page) with query preservation
+  - Soft-Delete Protection (`deleted_at` timestamp)
+  - Duplicate Phone Validation
+  - Role-based Action Restrictions (Staff restricted from deleting customer records)
+  - Full Activity Logging on all Customer Actions
 
 ---
 
@@ -70,6 +79,7 @@ laundry-mgt/
 │
 ├── database/
 │   ├── phase_01_authentication.sql # Phase 01 roles, users, resets & audit logs schema
+│   ├── phase_02_customers.sql     # Phase 02 customers table & sample seed data
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -77,14 +87,24 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with navigation items
+│   ├── sidebar.php                # Collapsible sidebar with active Customer navigation
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
-│   └── functions.php              # Global helpers (CSRF, escaping, URLs, auth & role checks)
+│   └── functions.php              # Global helpers (CSRF, escaping, URLs, customer codes)
 │
 ├── modules/
 │   ├── dashboard/
-│   │   └── index.php              # Main Dashboard (User profile, security & roadmap)
+│   │   └── index.php              # Main Dashboard (User profile, customer metrics & roadmap)
+│   │
+│   ├── customers/
+│   │   ├── index.php              # Customer listing with search, filter & pagination
+│   │   ├── create.php             # Add customer form
+│   │   ├── store.php              # Customer creation handler & validation
+│   │   ├── show.php               # Customer detail view & order history placeholder
+│   │   ├── edit.php               # Customer edit form
+│   │   ├── update.php             # Customer update handler & validation
+│   │   ├── delete.php             # Soft delete handler (Admin/Manager only)
+│   │   └── toggle_status.php      # Customer status toggle handler
 │   │
 │   └── profile/
 │       ├── index.php              # Profile management & settings view
@@ -106,7 +126,7 @@ laundry-mgt/
 ## 5. Database Setup & Installation
 
 ### Step 1: Create Database
-Open phpMyAdmin (`http://localhost/phpmyadmin/`) or MySQL CLI and run:
+Open phpMyAdmin (`http://localhost/phpmyadmin/`) or MySQL CLI:
 
 ```sql
 CREATE DATABASE IF NOT EXISTS `laundry_mgt` 
@@ -114,42 +134,19 @@ DEFAULT CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 ```
 
-### Step 2: Import `database/phase_01_authentication.sql`
-In phpMyAdmin:
-1. Select the `laundry_mgt` database.
-2. Click the **Import** tab.
-3. Choose `database/phase_01_authentication.sql` and click **Import**.
+### Step 2: Import SQL Files in Order
+1. Import `database/phase_01_authentication.sql`
+2. Import `database/phase_02_customers.sql`
 
-Or via Command Prompt / Terminal:
+Via CLI:
 ```bash
 mysql -u root -p laundry_mgt < database/phase_01_authentication.sql
+mysql -u root -p laundry_mgt < database/phase_02_customers.sql
 ```
 
 ---
 
-## 6. Configuration
-
-### Database Credentials (`config/database.php`)
-Configured for standard XAMPP environments:
-```php
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', '3306');
-define('DB_NAME', 'laundry_mgt');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-```
-
-### Application URL (`config/constants.php`)
-The application automatically detects the base URL dynamically (`http://localhost/laundry-mgt/`). If needed, you can configure a manual URL:
-```php
-define('CUSTOM_BASE_URL', 'http://localhost/laundry-mgt');
-```
-
----
-
-## 7. Default Administrator Credentials
-
-Use these credentials to sign in after importing the database:
+## 6. Default Administrator Credentials
 
 | Field | Value |
 | :--- | :--- |
@@ -161,51 +158,46 @@ Use these credentials to sign in after importing the database:
 
 ---
 
-## 8. User Guides
+## 7. Customer Management Features
 
-### How to Sign In
-1. Navigate to `http://localhost/laundry-mgt/` (automatically routes to `/auth/login.php`).
-2. Enter your email (`admin@laundrymgt.com`) and password (`Password123!`).
-3. Click **Sign In**. On success, you are redirected to the Dashboard.
+### Adding a Customer
+1. Navigate to **Customers** in the sidebar or top menu.
+2. Click **Add Customer**.
+3. Fill in **Customer Name** and **Phone Number** (Required), plus optional Email, Address, City, Postal Code, Notes, and Status.
+4. Click **Save Customer**. A unique `CUS-XXXXXX` code is automatically assigned.
 
-### How to Edit Profile
-1. Click your name/avatar in the top-right navbar and select **My Profile** (or click **My Profile** in the sidebar).
-2. Update your **Full Name**, **Email Address**, and **Phone Number**.
-3. Click **Save Changes**.
+### Searching & Filtering Customers
+- Type any keyword in the search bar (`CUS-000001`, `Rahim`, `01711`, or `Dhaka`).
+- Use the status dropdown to filter by `Active` or `Inactive`.
+- Pagination preserves search and filter parameters across pages.
 
-### How to Upload an Avatar
-1. Navigate to **My Profile**.
-2. Under the **Profile Picture** card, click **Choose File** and select an image (`.jpg`, `.jpeg`, `.png`, `.webp` up to 2MB).
-3. Click **Update Avatar**.
+### Editing & Status Toggling
+- Click the pencil icon on any customer row or the **Edit Customer** button on the details page.
+- Toggle status quickly using the status switch button or modal dialog.
 
-### How to Change Password
-1. Navigate to **My Profile** and scroll to the **Security & Change Password** section.
-2. Enter your **Current Password**, **New Password**, and **Confirm New Password**.
-3. Click **Update Password**.
-
-### How to Sign Out
-1. Click the profile dropdown in the top navbar and choose **Sign Out** (or navigate to `/auth/logout.php`).
-2. Your session is securely destroyed, an audit log is recorded, and you are returned to the login page.
+### Soft Deleting Customers
+- Only **Administrator** and **Manager** roles can delete customer records.
+- Deletion sets `deleted_at = NOW()`, preserving historical data integrity while removing the customer from active views.
 
 ---
 
-## 9. Roles & Permissions (Phase 01)
+## 8. Roles & Permissions (Phase 01 & 02)
 
-| Role ID | Role Name | Slug | Description |
-| :--- | :--- | :--- | :--- |
-| `1` | **Administrator** | `administrator` | Full system access and administrative control |
-| `2` | **Manager** | `manager` | Operational management, order oversight, and reporting |
-| `3` | **Staff** | `staff` | Laundry operations, order processing, and tracking |
+| Role | View / Search | Create Customer | Edit Customer | Toggle Status | Delete Customer |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Administrator** | Yes | Yes | Yes | Yes | Yes |
+| **Manager** | Yes | Yes | Yes | Yes | Yes |
+| **Staff** | Yes | Yes | Yes | Yes | **No (403)** |
 
 ---
 
-## 10. Development Roadmap
+## 9. Development Roadmap
 
-- **Phase 01 (Active):** Project Foundation, Authentication & Access Control, Security Baseline
-- **Phase 02:** Customer Management (Profiles, Contact, History)
+- **Phase 01 (Complete):** Authentication, Role Access, Security Baseline
+- **Phase 02 (Complete):** Customer Management (Profiles, Search, Pagination, Soft Deletes)
 - **Phase 03:** Laundry Services & Pricing (Dry Cleaning, Wash & Fold, Ironing)
 - **Phase 04:** Laundry Orders & Tracking (Intake, Status, Pickup)
 - **Phase 05:** Payments & Invoicing (POS, Receipts, Payment Status)
 - **Phase 06:** Reports & Analytics (Revenue, Operations, Daily Intake)
 - **Phase 07:** Staff Management & Role Permissions
-- **Phase 08:** System Settings & Machine/Equipment Management
+- **Phase 08:** System Settings & Equipment Management

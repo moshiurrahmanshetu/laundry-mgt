@@ -6,6 +6,7 @@
 
 $currentScript = $_SERVER['SCRIPT_NAME'] ?? '';
 $isDashboardActive = str_contains($currentScript, 'dashboard');
+$isCustomersActive = str_contains($currentScript, 'customers');
 $isProfileActive = str_contains($currentScript, 'profile');
 ?>
 <nav id="sidebar">
@@ -33,17 +34,15 @@ $isProfileActive = str_contains($currentScript, 'profile');
 
         <li class="nav-header">Laundry Operations</li>
 
-        <!-- Customers (Phase 02) -->
+        <!-- Customers (Active in Phase 02) -->
         <li class="nav-item">
-            <a href="javascript:void(0);" 
-               class="nav-link disabled" 
-               aria-disabled="true"
+            <a href="<?= base_url('modules/customers/index.php') ?>" 
+               class="nav-link <?= $isCustomersActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Customers (Phase 02)">
+               data-bs-title="Customers">
                 <i class="bi bi-people-fill"></i>
                 <span class="link-text">Customers</span>
-                <span class="badge bg-secondary">Phase 2</span>
             </a>
         </li>
 

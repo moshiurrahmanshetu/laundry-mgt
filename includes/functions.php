@@ -196,6 +196,20 @@ function is_staff(): bool {
 }
 
 /**
+ * Require specific role or deny access
+ *
+ * @param string|array $roles
+ * @param string|null $redirectPath
+ * @return void
+ */
+function require_role(string|array $roles, ?string $redirectPath = null): void {
+    if (!has_role($roles)) {
+        set_flash_message('error', 'Access Denied: You do not have permission to perform this action.');
+        redirect($redirectPath ?? 'modules/dashboard/index.php');
+    }
+}
+
+/**
  * Record activity/audit log
  *
  * @param int|null $userId
@@ -219,6 +233,43 @@ function log_activity(?int $userId, string $action, ?string $description = null)
         ]);
     } catch (PDOException $e) {
         error_log('Failed to log activity: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Generate unique sequential customer code (e.g. CUS-000001)
+ *
+ * @param PDO|null $pdo
+ * @return string
+ */
+function generate_customer_code(?PDO $pdo = null): string {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    try {
+        $stmt = $pdo->query('SELECT customer_code FROM customers ORDER BY id DESC LIMIT 1');
+        $lastCode = $stmt->fetchColumn();
+
+        $nextNumber = 1;
+        if ($lastCode && preg_match('/^CUS-(\d+)$/', $lastCode, $matches)) {
+            $nextNumber = (int)$matches[1] + 1;
+        }
+
+        do {
+            $candidateCode = sprintf('CUS-%06d', $nextNumber);
+            $checkStmt = $pdo->prepare('SELECT COUNT(*) FROM customers WHERE customer_code = :code');
+            $checkStmt->execute(['code' => $candidateCode]);
+            $exists = (int)$checkStmt->fetchColumn() > 0;
+            if ($exists) {
+                $nextNumber++;
+            }
+        } while ($exists);
+
+        return $candidateCode;
+    } catch (PDOException $e) {
+        error_log('Failed to generate customer code: ' . $e->getMessage());
+        return 'CUS-' . date('ymd') . rand(100, 999);
     }
 }
 
