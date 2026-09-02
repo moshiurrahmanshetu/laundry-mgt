@@ -7,6 +7,10 @@
 
 require_once __DIR__ . '/functions.php';
 
+if (!is_app_installed()) {
+    redirect('install/index.php');
+}
+
 // Prevent browser caching of protected pages
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Cache-Control: post-check=0, pre-check=0', false);

@@ -7,6 +7,10 @@
 
 require_once __DIR__ . '/functions.php';
 
+if (!is_app_installed()) {
+    redirect('install/index.php');
+}
+
 if (is_logged_in()) {
     redirect('modules/dashboard/index.php');
 }

@@ -1,6 +1,6 @@
 # ==============================================================================
 # Security & Access Control Configuration
-# Project: Loan Management System (loan-mgt)
+# Project: Laundry Management System (laundry-mgt)
 # ==============================================================================
 
 # Disable directory browsing
@@ -17,9 +17,10 @@ Options -Indexes
     </IfModule>
 </FilesMatch>
 
-# Protect config and database directories from direct browsing
+# Protect sensitive directories from direct browsing
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteRule ^config/ - [F,L]
+    RewriteRule ^storage/ - [F,L]
     RewriteRule ^database/ - [F,L]
 </IfModule>

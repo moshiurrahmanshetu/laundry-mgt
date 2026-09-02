@@ -37,7 +37,15 @@ if (!defined('LOGO_PATH')) {
     define('LOGO_PATH', UPLOAD_PATH . DIRECTORY_SEPARATOR . 'logos');
 }
 
-// Ensure upload directories exist
+if (!defined('STORAGE_PATH')) {
+    define('STORAGE_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'storage');
+}
+
+if (!defined('INSTALL_LOCK_FILE')) {
+    define('INSTALL_LOCK_FILE', STORAGE_PATH . DIRECTORY_SEPARATOR . 'install.lock');
+}
+
+// Ensure required runtime directories exist
 if (!is_dir(UPLOAD_PATH)) {
     @mkdir(UPLOAD_PATH, 0755, true);
 }
@@ -46,6 +54,22 @@ if (!is_dir(AVATAR_PATH)) {
 }
 if (!is_dir(LOGO_PATH)) {
     @mkdir(LOGO_PATH, 0755, true);
+}
+if (!is_dir(STORAGE_PATH)) {
+    @mkdir(STORAGE_PATH, 0755, true);
+}
+if (is_dir(STORAGE_PATH) && !file_exists(STORAGE_PATH . DIRECTORY_SEPARATOR . '.htaccess')) {
+    @file_put_contents(
+        STORAGE_PATH . DIRECTORY_SEPARATOR . '.htaccess',
+        "Options -Indexes\nDeny from all\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n"
+    );
+}
+
+/**
+ * Check if the application has completed first-run installation
+ */
+function is_app_installed(): bool {
+    return defined('INSTALL_LOCK_FILE') && file_exists(INSTALL_LOCK_FILE);
 }
 
 /**

@@ -1,0 +1,9 @@
+{
+    "installed": true,
+    "app_name": "Laundry Management System",
+    "app_version": "1.0.0",
+    "installed_at": "2026-09-02 08:49:04",
+    "php_version": "8.1.25",
+    "installed_by": "r@gmail.com",
+    "db_name": "laundry_mgt"
+}

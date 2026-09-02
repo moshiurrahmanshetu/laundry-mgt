@@ -95,14 +95,6 @@ $pageTitle = 'Sign In';
             </div>
         </form>
 
-        <!-- Development Default Credentials Hint -->
-        <?php if (APP_ENV === 'development'): ?>
-        <div class="mt-4 p-3 bg-light border rounded text-start" style="font-size: 0.8rem;">
-            <div class="fw-bold text-secondary mb-1"><i class="bi bi-info-circle me-1"></i> Default Administrator Credentials:</div>
-            <div class="text-muted">Email: <code class="text-dark">admin@laundrymgt.com</code></div>
-            <div class="text-muted">Password: <code class="text-dark">Password123!</code></div>
-        </div>
-        <?php endif; ?>
     </div>
 </div>
 

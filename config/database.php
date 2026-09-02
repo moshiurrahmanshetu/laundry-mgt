@@ -5,6 +5,12 @@
  * Database: laundry_mgt
  */
 
+// Include installer-generated database configuration if present
+$dbConfigFile = __DIR__ . '/db.php';
+if (file_exists($dbConfigFile)) {
+    require_once $dbConfigFile;
+}
+
 if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1');
 if (!defined('DB_PORT')) define('DB_PORT', '3306');
 if (!defined('DB_NAME')) define('DB_NAME', 'laundry_mgt');
@@ -46,10 +52,10 @@ function getDBConnection(): PDO {
                 die('<div style="font-family: sans-serif; padding: 20px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; color: #991b1b; max-width: 650px; margin: 40px auto;">' .
                     '<h3 style="margin-top: 0;">Database Connection Error</h3>' .
                     '<p>' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>' .
-                    '<p style="font-size: 13px; color: #7f1d1d;">Please verify that MySQL is running and that database <code>' . htmlspecialchars(DB_NAME, ENT_QUOTES, 'UTF-8') . '</code> has been imported from <code>database/phase_01_authentication.sql</code>.</p>' .
+                    '<p style="font-size: 13px; color: #7f1d1d;">Please verify that MySQL is running and that database <code>' . htmlspecialchars(DB_NAME, ENT_QUOTES, 'UTF-8') . '</code> exists.</p>' .
                     '</div>');
             } else {
-                die('A database error occurred. Please contact the administrator.');
+                die('A database error occurred. Please contact the system administrator.');
             }
         }
     }
