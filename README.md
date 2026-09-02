@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 08
+# Laundry Management System (`laundry-mgt`) — Phase 09
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -6,7 +6,7 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 ## 1. Project Purpose & Overview
 
-The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, real-time business reports, and staff permissions.
+The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, operating business expenses, business reports, and staff permissions.
 
 ### Implemented Phases
 - **Phase 01: Foundation & Authentication System**
@@ -62,17 +62,22 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Visual Step Timeline on Operations Details (`show.php` with highlighted stages)
   - Audit Trail Tracking: Real-time operational transition events recorded and displayed from `activity_logs`
   - Printable Operations Work Order (`print.php` with garment checklist and quality assurance signature boxes)
-- **Phase 08: Laundry Reports & Analytics (NEW)**
+- **Phase 08: Laundry Reports & Analytics**
   - Comprehensive Business Overview Report (`modules/reports/index.php`) with real-time KPI metrics (Gross Sales, Direct Collections, Receivables Due, Order Volume, Customer Growth, Deliveries).
   - Pure CSS Horizontal Distribution Bars (Order Stage Breakdown, Payment Settlement Breakdown) without any external chart libraries or gradients.
   - Sales & Revenue Report (`modules/reports/sales.php`): Daily sales aggregation, order counts, gross volume, collections, and customer balances.
   - Order Operations Report (`modules/reports/orders.php`): Stage throughput flow and daily completion rates.
-  - Payment Collections Report (`modules/reports/payments.php`): Multi-channel payment analysis (Cash, Card, Mobile Banking, Bank Transfer) with receipt transactions log.
-  - Customer Performance Report (`modules/reports/customers.php`): Registration acquisition velocity and Top 10 client rankings.
-  - Services Demand Report (`modules/reports/services.php`): Itemized garment volume and category revenue generation.
-  - Logistics Fulfillment Report (`modules/reports/delivery.php`): Dispatch schedule volume and route fulfillment success rates.
-  - Standardized Date Filter Presets: Today, Yesterday, This Week, This Month, Last Month, This Year, All Time, Custom Range.
-  - Role Guarding: Direct URL access protection restricts financial reports to Administrators and Managers.
+  - Payment Collections Report (`modules/reports/payments.php`): Multi-channel payment analysis with receipt transactions log.
+  - Customer Performance Report (`modules/reports/customers.php`): Acquisition velocity and Top 10 client rankings.
+  - Services Demand Report (`modules/reports/services.php`): Garment volume and category revenue generation.
+  - Logistics Fulfillment Report (`modules/reports/delivery.php`): Dispatch volume and route fulfillment success rates.
+- **Phase 09: Expense Management (NEW)**
+  - Operational Expense Tracking (`modules/expenses/index.php`) with dynamic summary cards calculated strictly on `expense_date` (Today, This Month, Current Year, All-Time Total).
+  - Unique Sequential Expense Reference Generation (`EXP-000001`, `EXP-000002`...).
+  - Expense Category Directory (`modules/expenses/categories.php`) with add, inline edit, active/inactive status toggle, and foreign-key delete protection.
+  - Database Integrity & Soft Deletes: Expenses and Categories utilize soft deletion (`deleted_at IS NOT NULL`) with `ON DELETE RESTRICT` foreign keys preventing accidental deletion of referenced categories.
+  - Printable Expense Payment Voucher (`modules/expenses/print.php`) with disbursement details and authorized signature boxes.
+  - Strict Role-Based Security: Financial expense access is strictly guarded for Administrators and Managers (`require_role(['administrator', 'manager'])`).
 
 ---
 
@@ -131,6 +136,7 @@ laundry-mgt/
 │   ├── phase_06_delivery.sql      # Phase 06 pickup_deliveries table & seed data
 │   ├── phase_07_operations.sql    # Phase 07 operations & workflow documentation
 │   ├── phase_08_reports.sql       # Phase 08 reports & analytics documentation
+│   ├── phase_09_expenses.sql      # Phase 09 expense_categories & expenses schema
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -138,20 +144,34 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with active Reports navigation
+│   ├── sidebar.php                # Collapsible sidebar with active Expenses navigation
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
-│   └── functions.php              # Global helpers (CSRF, numbering, report date parser, badges)
+│   └── functions.php              # Global helpers (CSRF, numbering, expense ref generator, badges)
 │
 ├── modules/
 │   ├── dashboard/
-│   │   └── index.php              # Main Dashboard (User profile, operations, reports, orders & metrics)
+│   │   └── index.php              # Main Dashboard (User profile, operations, reports, expenses & metrics)
+│   │
+│   ├── expenses/
+│   │   ├── index.php              # Expenses dashboard, date metrics, search, filters & table
+│   │   ├── create.php             # Record expense form
+│   │   ├── store.php              # Expense store POST handler & transaction
+│   │   ├── show.php               # Expense voucher profile card
+│   │   ├── edit.php               # Edit expense form
+│   │   ├── update.php             # Expense update POST handler
+│   │   ├── delete.php             # Soft delete POST handler
+│   │   ├── print.php              # Printable expense voucher slip with signatures
+│   │   ├── categories.php         # Expense category directory & management
+│   │   ├── category_store.php     # Add category POST handler
+│   │   ├── category_update.php    # Update category POST handler
+│   │   └── category_delete.php    # Soft delete category POST handler (RESTRICT guarded)
 │   │
 │   ├── reports/
 │   │   ├── index.php              # Overview report dashboard, KPI cards & CSS distribution bars
 │   │   ├── sales.php              # Sales & revenue report with daily aggregation (Admin/Manager)
 │   │   ├── orders.php             # Orders report with stage breakdown & daily intake flow
-│   │   ├── payments.php           # Payment collections & payment method breakdown (Admin/Manager)
+│   │   ├── payments.php           # Payment collections & payment channel breakdown (Admin/Manager)
 │   │   ├── customers.php          # Customer performance report & top 10 spenders
 │   │   ├── services.php           # Service category & garment demand analytics
 │   │   └── delivery.php           # Pickup & delivery fulfillment logistics report
@@ -244,16 +264,18 @@ laundry-mgt/
 6. `database/phase_06_delivery.sql`
 7. `database/phase_07_operations.sql`
 8. `database/phase_08_reports.sql`
+9. `database/phase_09_expenses.sql`
 
 ---
 
-## 6. Roles & Permissions (Phase 01 — 08)
+## 6. Roles & Permissions (Phase 01 — 09)
 
 | Module Action | Administrator | Manager | Staff |
 | :--- | :---: | :---: | :---: |
+| **Manage Expenses (View, Add, Edit, Delete, Print)** | Yes | Yes | **No (403)** |
+| **Manage Expense Categories** | Yes | Yes | **No (403)** |
 | **View Financial Reports (Sales, Payments)** | Yes | Yes | **No (403)** |
 | **View Operational Reports (Overview, Orders, Services, Delivery, Customers)** | Yes | Yes | Yes |
-| **Print Business Reports** | Yes | Yes | Yes |
 | **Advance Next Workflow Stage** | Yes | Yes | Yes |
 | **Reopen Delivered/Cancelled Order** | Yes | Yes | **No (403)** |
 | **Assign Delivery Staff** | Yes | Yes | **No (403)** |
@@ -272,5 +294,6 @@ laundry-mgt/
 - **Phase 06 (Complete):** Laundry Pickup & Delivery (Dispatch, Address Snapshots, Slips)
 - **Phase 07 (Complete):** Laundry Operations (Workflow Queue, Visual Timeline, Work Orders)
 - **Phase 08 (Complete):** Reports & Analytics (Sales, Payments, Delivery, Customers, Services)
-- **Phase 09:** Staff Management & Role Permissions
-- **Phase 10:** System Settings & Equipment Management
+- **Phase 09 (Complete):** Expense Management (Operating Expenses, Categories, Vouchers)
+- **Phase 10:** Staff Management & Role Permissions
+- **Phase 11:** System Settings & Equipment Management

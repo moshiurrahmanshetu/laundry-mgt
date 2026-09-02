@@ -762,3 +762,62 @@ function get_report_date_range(array $queryParams = [], string $defaultPreset = 
     ];
 }
 
+/**
+ * Generate unique sequential expense reference number (e.g. EXP-000001, EXP-000002)
+ *
+ * @param PDO|null $pdo
+ * @return string
+ */
+function generate_expense_reference(?PDO $pdo = null): string {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    try {
+        $stmt = $pdo->query('
+            SELECT reference_number 
+            FROM expenses 
+            WHERE reference_number LIKE "EXP-%" 
+            ORDER BY id DESC 
+            LIMIT 1
+        ');
+        $lastRef = $stmt->fetchColumn();
+
+        $nextNumber = 1;
+        if ($lastRef && preg_match('/^EXP-(\d+)$/', $lastRef, $matches)) {
+            $nextNumber = (int)$matches[1] + 1;
+        }
+
+        do {
+            $candidateRef = sprintf('EXP-%06d', $nextNumber);
+            $checkStmt = $pdo->prepare('SELECT COUNT(*) FROM expenses WHERE reference_number = :ref');
+            $checkStmt->execute(['ref' => $candidateRef]);
+            $exists = (int)$checkStmt->fetchColumn() > 0;
+            if ($exists) {
+                $nextNumber++;
+            }
+        } while ($exists);
+
+        return $candidateRef;
+    } catch (PDOException $e) {
+        error_log('Failed to generate expense reference: ' . $e->getMessage());
+        return 'EXP-' . date('ymd') . rand(100, 999);
+    }
+}
+
+/**
+ * Render Bootstrap badge for expense category status
+ *
+ * @param string $status
+ * @return string
+ */
+function expense_category_status_badge(string $status): string {
+    $status = strtolower(trim($status));
+    return match ($status) {
+        'active'   => '<span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase"><i class="bi bi-check-circle me-1"></i>Active</span>',
+        'inactive' => '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle text-uppercase"><i class="bi bi-pause-circle me-1"></i>Inactive</span>',
+        default    => '<span class="badge bg-light text-dark border text-uppercase">' . e($status) . '</span>'
+    };
+}
+
+

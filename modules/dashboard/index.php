@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard View (Phase 01 through Phase 08 Active)
+ * Dashboard View (Phase 01 through Phase 09 Active)
  * Project: Laundry Management System (laundry-mgt)
  */
 
@@ -21,6 +21,7 @@ $readyOrders = 0;
 $totalRevenue = 0.00;
 $totalPaymentsCount = 0;
 $pendingDeliveries = 0;
+$thisMonthExpenses = 0.00;
 
 try {
     $custStmt = $pdo->query('SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL');
@@ -64,6 +65,12 @@ try {
     $pendingDeliveries = (int)$delStmt->fetchColumn();
 } catch (PDOException $e) {}
 
+try {
+    // This month operational expenses
+    $expStmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE expense_date BETWEEN DATE_FORMAT(NOW(), '%Y-%m-01') AND LAST_DAY(NOW()) AND deleted_at IS NULL");
+    $thisMonthExpenses = (float)$expStmt->fetchColumn();
+} catch (PDOException $e) {}
+
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
 require_once __DIR__ . '/../../includes/topbar.php';
@@ -89,14 +96,16 @@ require_once __DIR__ . '/../../includes/topbar.php';
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="<?= base_url('modules/reports/index.php') ?>" class="btn btn-outline-dark btn-sm">
-                        <i class="bi bi-bar-chart-line-fill me-1"></i> View Reports
-                    </a>
+                    <?php if (is_admin() || is_manager()): ?>
+                        <a href="<?= base_url('modules/expenses/create.php') ?>" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-wallet2 me-1"></i> Record Expense
+                        </a>
+                        <a href="<?= base_url('modules/reports/index.php') ?>" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-bar-chart-line-fill me-1"></i> Reports
+                        </a>
+                    <?php endif; ?>
                     <a href="<?= base_url('modules/operations/index.php') ?>" class="btn btn-warning btn-sm fw-semibold">
-                        <i class="bi bi-arrow-repeat me-1"></i> Operations Queue
-                    </a>
-                    <a href="<?= base_url('modules/delivery/create.php') ?>" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-truck me-1"></i> Dispatch
+                        <i class="bi bi-arrow-repeat me-1"></i> Operations
                     </a>
                     <a href="<?= base_url('modules/payments/create.php') ?>" class="btn btn-success btn-sm">
                         <i class="bi bi-credit-card-fill me-1"></i> Receive Payment
@@ -163,6 +172,31 @@ require_once __DIR__ . '/../../includes/topbar.php';
         </div>
     </div>
 
+    <!-- Operating Expenses (This Month) -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div class="display-6 fw-bold text-danger mb-0"><?= format_price($thisMonthExpenses) ?></div>
+                        <div class="text-muted small">Month's Expenses</div>
+                    </div>
+                    <div class="p-3 bg-danger-subtle text-danger rounded-circle fs-4">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-calendar-event text-danger me-1"></i>Operational costs for <?= date('F') ?>
+                </div>
+            </div>
+            <div class="card-footer bg-light py-2">
+                <a href="<?= base_url('modules/expenses/index.php') ?>" class="small text-decoration-none fw-semibold text-danger">
+                    Manage Expenses <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Active Pickups & Deliveries -->
     <div class="col-12 col-md-6 col-xl-3">
         <div class="card h-100 shadow-sm border-0">
@@ -187,31 +221,6 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
         </div>
     </div>
-
-    <!-- Registered Customers Metric Card -->
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <div class="display-6 fw-bold text-dark mb-0"><?= $totalCustomers ?></div>
-                        <div class="text-muted small">Registered Customers</div>
-                    </div>
-                    <div class="p-3 bg-info-subtle text-info rounded-circle fs-4">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                </div>
-                <div class="small text-muted">
-                    <i class="bi bi-check-circle text-success me-1"></i><strong><?= $activeCustomers ?></strong> active accounts
-                </div>
-            </div>
-            <div class="card-footer bg-light py-2">
-                <a href="<?= base_url('modules/customers/index.php') ?>" class="small text-decoration-none fw-semibold">
-                    Manage Customers <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Laundry Management Development Roadmap -->
@@ -223,7 +232,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Phases 01 through 08 are active in production mode:
+                    Phases 01 through 09 are active in production mode:
                 </p>
                 <div class="row g-3 text-center">
                     <div class="col-6 col-md-4 col-lg-3">
@@ -283,8 +292,15 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         </div>
                     </div>
                     <div class="col-6 col-md-4 col-lg-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 9 (Active)</span>
+                            <div class="fw-bold text-dark small">Expense Management</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Bills &amp; Categories</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
                         <div class="p-3 border rounded bg-light opacity-75">
-                            <span class="badge bg-secondary mb-2">Phase 9 (Next)</span>
+                            <span class="badge bg-secondary mb-2">Phase 10 (Next)</span>
                             <div class="fw-bold text-muted small">Staff &amp; Roles</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Permissions, Access</small>
                         </div>

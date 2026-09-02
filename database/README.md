@@ -48,6 +48,11 @@ File: [`phase_07_operations.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/p
 File: [`phase_08_reports.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_08_reports.sql)
 - Real-time business intelligence and multi-dimensional reporting across existing tables with zero duplicate schemas.
 
+### Phase 09: Expense Management
+File: [`phase_09_expenses.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_09_expenses.sql)
+- `expense_categories` — Operational expense categories with active status and uniqueness
+- `expenses` — Expense transaction records with reference numbers, payment methods, amounts, and user audit tracking
+
 ---
 
 ## How to Import
@@ -63,6 +68,7 @@ File: [`phase_08_reports.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phas
    - 4th: `database/phase_04_orders.sql`
    - 5th: `database/phase_05_payments.sql`
    - 6th: `database/phase_06_delivery.sql`
+   - 7th: `database/phase_09_expenses.sql`
 5. Click **Import**.
 
 ### Option 2: Using MySQL CLI
@@ -74,6 +80,7 @@ mysql -u root -p laundry_mgt < database/phase_03_services.sql
 mysql -u root -p laundry_mgt < database/phase_04_orders.sql
 mysql -u root -p laundry_mgt < database/phase_05_payments.sql
 mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
+mysql -u root -p laundry_mgt < database/phase_09_expenses.sql
 ```
 
 ---

@@ -9,6 +9,7 @@ $isDashboardActive  = str_contains($currentScript, 'dashboard');
 $isOperationsActive = str_contains($currentScript, 'operations');
 $isOrdersActive     = str_contains($currentScript, 'orders');
 $isPaymentsActive   = str_contains($currentScript, 'payments');
+$isExpensesActive   = str_contains($currentScript, 'expenses');
 $isDeliveryActive   = str_contains($currentScript, 'delivery');
 $isCustomersActive  = str_contains($currentScript, 'customers');
 $isServicesActive   = str_contains($currentScript, 'services');
@@ -76,6 +77,18 @@ $isProfileActive    = str_contains($currentScript, 'profile');
             </a>
         </li>
 
+        <!-- Expenses (Active in Phase 09) -->
+        <li class="nav-item">
+            <a href="<?= base_url('modules/expenses/index.php') ?>" 
+               class="nav-link <?= $isExpensesActive ? 'active' : '' ?>"
+               data-bs-toggle="tooltip" 
+               data-bs-placement="right" 
+               data-bs-title="Expense Management">
+                <i class="bi bi-wallet2"></i>
+                <span class="link-text">Expenses</span>
+            </a>
+        </li>
+
         <!-- Pickup & Delivery (Active in Phase 06) -->
         <li class="nav-item">
             <a href="<?= base_url('modules/delivery/index.php') ?>" 
@@ -138,31 +151,31 @@ $isProfileActive    = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Staff & Roles (Phase 09) -->
+        <!-- Staff & Roles (Phase 10) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Staff & Roles (Phase 09)">
+               data-bs-title="Staff & Roles (Phase 10)">
                 <i class="bi bi-shield-lock-fill"></i>
                 <span class="link-text">Staff &amp; Roles</span>
-                <span class="badge bg-secondary">Phase 9</span>
+                <span class="badge bg-secondary">Phase 10</span>
             </a>
         </li>
 
-        <!-- Settings (Phase 10) -->
+        <!-- Settings (Phase 11) -->
         <li class="nav-item">
             <a href="javascript:void(0);" 
                class="nav-link disabled" 
                aria-disabled="true"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Settings (Phase 10)">
+               data-bs-title="Settings (Phase 11)">
                 <i class="bi bi-gear-fill"></i>
                 <span class="link-text">Settings</span>
-                <span class="badge bg-secondary">Phase 10</span>
+                <span class="badge bg-secondary">Phase 11</span>
             </a>
         </li>
     </ul>

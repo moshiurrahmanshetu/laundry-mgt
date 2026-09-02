@@ -69,17 +69,21 @@ body {
     padding: 0;
     overflow-x: hidden;
 }
-
 a {
     color: var(--primary-solid);
     text-decoration: none;
 }
-
 a:hover {
     color: var(--primary-hover);
-    text-decoration: underline;
 }
-
+.card-body .rounded-circle {
+    border-radius: 50% !important;
+    height: 45px;
+    width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 /* ==========================================================================
    Layout Architecture
    ========================================================================== */
