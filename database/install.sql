@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
     `email` VARCHAR(150) NOT NULL,
     `token` VARCHAR(100) NOT NULL UNIQUE,
     `expires_at` DATETIME NOT NULL,
+    `used_at` DATETIME NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_pr_email` (`email`),
     INDEX `idx_pr_token` (`token`)
@@ -103,11 +104,13 @@ CREATE TABLE IF NOT EXISTS `customers` (
     `postal_code` VARCHAR(20) NULL,
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
     `notes` TEXT NULL,
+    `created_by` INT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `deleted_at` DATETIME NULL,
     INDEX `idx_cus_phone` (`phone`),
-    INDEX `idx_cus_email` (`email`)
+    INDEX `idx_cus_email` (`email`),
+    CONSTRAINT `fk_cus_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------------------------
@@ -120,9 +123,11 @@ CREATE TABLE IF NOT EXISTS `services` (
     `description` TEXT NULL,
     `pricing_type` ENUM('per_item', 'per_kg') NOT NULL DEFAULT 'per_item',
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+    `created_by` INT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `deleted_at` DATETIME NULL
+    `deleted_at` DATETIME NULL,
+    CONSTRAINT `fk_svc_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------------------------
@@ -132,12 +137,14 @@ CREATE TABLE IF NOT EXISTS `service_items` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `service_id` INT NOT NULL,
     `item_name` VARCHAR(100) NOT NULL,
+    `description` TEXT NULL,
     `unit` VARCHAR(20) NOT NULL DEFAULT 'piece',
     `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
     `sort_order` INT NOT NULL DEFAULT 0,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` DATETIME NULL,
     CONSTRAINT `fk_si_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -153,6 +160,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `status` ENUM('received', 'processing', 'ready', 'delivered', 'cancelled') NOT NULL DEFAULT 'received',
     `payment_status` ENUM('unpaid', 'partial', 'paid') NOT NULL DEFAULT 'unpaid',
     `subtotal` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    `discount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     `discount_type` ENUM('none', 'percentage', 'fixed') NOT NULL DEFAULT 'none',
     `discount_value` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     `discount_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -208,6 +216,7 @@ CREATE TABLE IF NOT EXISTS `payments` (
     `received_by` INT NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` DATETIME NULL,
     INDEX `idx_pay_order` (`order_id`),
     INDEX `idx_pay_date` (`payment_date`),
     CONSTRAINT `fk_pay_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE RESTRICT,
@@ -224,7 +233,7 @@ CREATE TABLE IF NOT EXISTS `pickup_deliveries` (
     `customer_id` INT NOT NULL,
     `type` ENUM('pickup', 'delivery') NOT NULL DEFAULT 'pickup',
     `assigned_to` INT NULL,
-    `service_address` TEXT NOT NULL,
+    `address` TEXT NOT NULL,
     `contact_name` VARCHAR(100) NOT NULL,
     `contact_phone` VARCHAR(30) NOT NULL,
     `scheduled_date` DATE NOT NULL,

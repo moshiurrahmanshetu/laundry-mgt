@@ -2,7 +2,7 @@
 /**
  * Generated Database Configuration
  * Project: Laundry Management System
- * Generated on: 2026-09-02 08:48:38
+ * Generated on: 2026-09-02 09:09:57
  */
 
 if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1');

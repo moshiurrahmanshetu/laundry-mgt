@@ -205,11 +205,11 @@ try {
     $insertOrderStmt = $pdo->prepare('
         INSERT INTO orders (
             order_number, customer_id, order_date, expected_date, status,
-            subtotal, discount, total, paid_amount, due_amount, payment_status,
+            subtotal, discount, discount_amount, total, paid_amount, due_amount, payment_status,
             notes, created_by, created_at, updated_at
         ) VALUES (
             :order_number, :customer_id, :order_date, :expected_date, "received",
-            :subtotal, :discount, :total, :paid_amount, :due_amount, :payment_status,
+            :subtotal, :discount, :discount, :total, :paid_amount, :due_amount, :payment_status,
             :notes, :created_by, NOW(), NOW()
         )
     ');

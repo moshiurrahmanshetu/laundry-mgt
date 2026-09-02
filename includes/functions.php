@@ -491,6 +491,24 @@ function payment_method_label(string $method): string {
 }
 
 /**
+ * Render Bootstrap badge for payment method
+ *
+ * @param string $method
+ * @return string
+ */
+function payment_method_badge(string $method): string {
+    $label = payment_method_label($method);
+    $icon = match (strtolower(trim($method))) {
+        'cash'           => 'bi-cash',
+        'card'           => 'bi-credit-card',
+        'mobile_banking' => 'bi-phone',
+        'bank_transfer'  => 'bi-bank',
+        default          => 'bi-wallet2'
+    };
+    return '<span class="badge bg-light text-dark border"><i class="bi ' . $icon . ' me-1 text-secondary"></i>' . e($label) . '</span>';
+}
+
+/**
  * Render Bootstrap badge for payment transaction status
  *
  * @param string $status

@@ -223,16 +223,17 @@ try {
     // Update Order Master
     $updateOrderStmt = $pdo->prepare('
         UPDATE orders SET
-            customer_id    = :customer_id,
-            order_date     = :order_date,
-            expected_date  = :expected_date,
-            status         = :status,
-            subtotal       = :subtotal,
-            discount       = :discount,
-            total          = :total,
-            paid_amount    = :paid_amount,
-            due_amount     = :due_amount,
-            payment_status = :payment_status,
+            customer_id     = :customer_id,
+            order_date      = :order_date,
+            expected_date   = :expected_date,
+            status          = :status,
+            subtotal        = :subtotal,
+            discount        = :discount,
+            discount_amount = :discount,
+            total           = :total,
+            paid_amount     = :paid_amount,
+            due_amount      = :due_amount,
+            payment_status  = :payment_status,
             notes          = :notes,
             updated_at     = NOW()
         WHERE id = :id
