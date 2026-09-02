@@ -820,4 +820,113 @@ function expense_category_status_badge(string $status): string {
     };
 }
 
+/**
+ * Check if the current logged in user has a specific permission
+ *
+ * @param string $permissionSlug
+ * @return bool
+ */
+function has_permission(string $permissionSlug): bool {
+    if (!is_logged_in()) {
+        return false;
+    }
+
+    $user = current_user();
+    if (!$user) {
+        return false;
+    }
+
+    // Administrators always have all permissions
+    if (($user['role_slug'] ?? '') === 'administrator') {
+        return true;
+    }
+
+    $roleId = (int)($user['role_id'] ?? 0);
+    if ($roleId <= 0) {
+        return false;
+    }
+
+    // Check cached permissions in session
+    if (!isset($_SESSION['user_permissions']) || !is_array($_SESSION['user_permissions'])) {
+        $_SESSION['user_permissions'] = get_role_permissions($roleId);
+    }
+
+    return in_array($permissionSlug, $_SESSION['user_permissions'], true);
+}
+
+/**
+ * Require specific permission or abort with 403
+ *
+ * @param string $permissionSlug
+ * @param string|null $redirectPath
+ * @return void
+ */
+function require_permission(string $permissionSlug, ?string $redirectPath = null): void {
+    if (!has_permission($permissionSlug)) {
+        http_response_code(403);
+        set_flash_message('error', 'Access Denied: You do not have permission to access this resource.');
+        redirect($redirectPath ?? 'modules/dashboard/index.php');
+    }
+}
+
+/**
+ * Retrieve array of permission slugs assigned to a role ID
+ *
+ * @param int $roleId
+ * @param PDO|null $pdo
+ * @return array
+ */
+function get_role_permissions(int $roleId, ?PDO $pdo = null): array {
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    try {
+        $stmt = $pdo->prepare('
+            SELECT p.slug
+            FROM role_permissions rp
+            INNER JOIN permissions p ON rp.permission_id = p.id
+            WHERE rp.role_id = :role_id
+        ');
+        $stmt->execute(['role_id' => $roleId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    } catch (PDOException $e) {
+        error_log('Failed to fetch role permissions: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Render Bootstrap badge for user account status
+ *
+ * @param string $status
+ * @return string
+ */
+function user_status_badge(string $status): string {
+    $status = strtolower(trim($status));
+    return match ($status) {
+        'active'   => '<span class="badge bg-success-subtle text-success border border-success-subtle text-uppercase"><i class="bi bi-check-circle me-1"></i>Active</span>',
+        'inactive' => '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle text-uppercase"><i class="bi bi-slash-circle me-1"></i>Inactive</span>',
+        default    => '<span class="badge bg-light text-dark border text-uppercase">' . e($status) . '</span>'
+    };
+}
+
+/**
+ * Render solid badge for role
+ *
+ * @param string $roleSlug
+ * @param string $roleName
+ * @return string
+ */
+function role_badge(string $roleSlug, string $roleName): string {
+    $roleSlug = strtolower(trim($roleSlug));
+    return match ($roleSlug) {
+        'administrator' => '<span class="badge bg-dark text-white border"><i class="bi bi-shield-fill me-1 text-danger"></i>' . e($roleName) . '</span>',
+        'manager'       => '<span class="badge bg-primary text-white border"><i class="bi bi-person-badge-fill me-1"></i>' . e($roleName) . '</span>',
+        'staff'         => '<span class="badge bg-info-subtle text-dark border"><i class="bi bi-person-fill me-1"></i>' . e($roleName) . '</span>',
+        default         => '<span class="badge bg-secondary text-white border">' . e($roleName) . '</span>'
+    };
+}
+
+
 

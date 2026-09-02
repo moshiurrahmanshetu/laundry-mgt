@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 09
+# Laundry Management System (`laundry-mgt`) — Phase 10
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -6,7 +6,7 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 ## 1. Project Purpose & Overview
 
-The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, operating business expenses, business reports, and staff permissions.
+The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, operating business expenses, business reports, and staff & role permissions.
 
 ### Implemented Phases
 - **Phase 01: Foundation & Authentication System**
@@ -71,13 +71,20 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Customer Performance Report (`modules/reports/customers.php`): Acquisition velocity and Top 10 client rankings.
   - Services Demand Report (`modules/reports/services.php`): Garment volume and category revenue generation.
   - Logistics Fulfillment Report (`modules/reports/delivery.php`): Dispatch volume and route fulfillment success rates.
-- **Phase 09: Expense Management (NEW)**
+- **Phase 09: Expense Management**
   - Operational Expense Tracking (`modules/expenses/index.php`) with dynamic summary cards calculated strictly on `expense_date` (Today, This Month, Current Year, All-Time Total).
   - Unique Sequential Expense Reference Generation (`EXP-000001`, `EXP-000002`...).
   - Expense Category Directory (`modules/expenses/categories.php`) with add, inline edit, active/inactive status toggle, and foreign-key delete protection.
   - Database Integrity & Soft Deletes: Expenses and Categories utilize soft deletion (`deleted_at IS NOT NULL`) with `ON DELETE RESTRICT` foreign keys preventing accidental deletion of referenced categories.
   - Printable Expense Payment Voucher (`modules/expenses/print.php`) with disbursement details and authorized signature boxes.
-  - Strict Role-Based Security: Financial expense access is strictly guarded for Administrators and Managers (`require_role(['administrator', 'manager'])`).
+- **Phase 10: Staff & Roles Management & Sidebar UI Fix (NEW)**
+  - Staff Accounts Directory (`modules/staff/index.php`) with metrics, search, role/status filters, and soft deletion.
+  - Staff Intake & Editing (`modules/staff/create.php`, `edit.php`, `show.php`) with secure bcrypt password hashing, avatar upload, and immutable account integrity.
+  - Role Assignment Bug Prevention: Form select elements and update statements strictly enforce correct `role_id` relational foreign keys without hardcoded role fallbacks.
+  - Administrator Lockout Protection: Prevents deactivating, deleting, or reassigning the last active Administrator account.
+  - Custom Role Management (`modules/staff/roles.php`): Role directory with add/edit/delete and system role protection (`administrator`, `manager`, `staff`).
+  - Granular Permissions Matrix (`modules/staff/role_permissions.php`): 22 module-level permissions across Customers, Services, Orders, Payments, Delivery, Operations, Reports, Expenses, Staff, and Roles.
+  - Sidebar User Profile UI Fix: Complete layout refactoring with scrollable navigation (`overflow-y: auto`) and fixed, non-clipped bottom user footer (`flex-shrink: 0`, min-height: 64px) for desktop, mobile, expanded, and collapsed sidebar states.
 
 ---
 
@@ -107,7 +114,7 @@ laundry-mgt/
 │
 ├── assets/
 │   ├── css/
-│   │   └── style.css              # Custom styling, solid color palette, animations
+│   │   └── style.css              # Custom styling, solid color palette, sidebar flex layout
 │   ├── js/
 │   │   └── app.js                 # Collapsible sidebar, localStorage state, mobile drawer
 │   ├── images/
@@ -137,6 +144,7 @@ laundry-mgt/
 │   ├── phase_07_operations.sql    # Phase 07 operations & workflow documentation
 │   ├── phase_08_reports.sql       # Phase 08 reports & analytics documentation
 │   ├── phase_09_expenses.sql      # Phase 09 expense_categories & expenses schema
+│   ├── phase_10_staff_roles.sql   # Phase 10 permissions, role_permissions & schema updates
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -144,14 +152,30 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with active Expenses navigation
+│   ├── sidebar.php                # Collapsible sidebar with active Staff & Roles link
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
-│   └── functions.php              # Global helpers (CSRF, numbering, expense ref generator, badges)
+│   └── functions.php              # Global helpers (CSRF, permissions, status badges, numbering)
 │
 ├── modules/
 │   ├── dashboard/
 │   │   └── index.php              # Main Dashboard (User profile, operations, reports, expenses & metrics)
+│   │
+│   ├── staff/
+│   │   ├── index.php              # Staff directory, filters, pagination, delete & status modals
+│   │   ├── create.php             # Staff creation form
+│   │   ├── store.php              # Staff store handler (Validation, bcrypt, avatar upload)
+│   │   ├── show.php               # Staff profile view & user activity history
+│   │   ├── edit.php               # Staff edit form (Role selection, optional password change)
+│   │   ├── update.php             # Staff update handler (Admin lockout protection)
+│   │   ├── delete.php             # Soft delete handler (Self-delete & last admin protection)
+│   │   ├── toggle_status.php      # Account status toggle handler (Admin lockout protection)
+│   │   ├── roles.php              # Roles directory, Add/Edit/Delete modals
+│   │   ├── role_store.php         # Add role POST handler
+│   │   ├── role_update.php        # Update role POST handler
+│   │   ├── role_delete.php        # Soft delete role POST handler (System role protection)
+│   │   ├── role_permissions.php   # Module-level granular permissions matrix
+│   │   └── role_permissions_update.php # Save permissions POST handler
 │   │
 │   ├── expenses/
 │   │   ├── index.php              # Expenses dashboard, date metrics, search, filters & table
@@ -265,13 +289,15 @@ laundry-mgt/
 7. `database/phase_07_operations.sql`
 8. `database/phase_08_reports.sql`
 9. `database/phase_09_expenses.sql`
+10. `database/phase_10_staff_roles.sql`
 
 ---
 
-## 6. Roles & Permissions (Phase 01 — 09)
+## 6. Roles & Permissions (Phase 01 — 10)
 
 | Module Action | Administrator | Manager | Staff |
 | :--- | :---: | :---: | :---: |
+| **Staff & Roles Management** | **Yes** | **No (403)** | **No (403)** |
 | **Manage Expenses (View, Add, Edit, Delete, Print)** | Yes | Yes | **No (403)** |
 | **Manage Expense Categories** | Yes | Yes | **No (403)** |
 | **View Financial Reports (Sales, Payments)** | Yes | Yes | **No (403)** |
@@ -295,5 +321,5 @@ laundry-mgt/
 - **Phase 07 (Complete):** Laundry Operations (Workflow Queue, Visual Timeline, Work Orders)
 - **Phase 08 (Complete):** Reports & Analytics (Sales, Payments, Delivery, Customers, Services)
 - **Phase 09 (Complete):** Expense Management (Operating Expenses, Categories, Vouchers)
-- **Phase 10:** Staff Management & Role Permissions
+- **Phase 10 (Complete):** Staff Management & Role Permissions (Staff Directory, Roles, Permissions, Lockout Protection)
 - **Phase 11:** System Settings & Equipment Management

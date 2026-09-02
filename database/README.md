@@ -53,6 +53,12 @@ File: [`phase_09_expenses.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/pha
 - `expense_categories` — Operational expense categories with active status and uniqueness
 - `expenses` — Expense transaction records with reference numbers, payment methods, amounts, and user audit tracking
 
+### Phase 10: Staff & Roles Management
+File: [`phase_10_staff_roles.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_10_staff_roles.sql)
+- `permissions` — Granular module-level authorization permissions
+- `role_permissions` — Relational role permissions mapping matrix
+- Safe non-destructive column additions on `users` (`deleted_at`) and `roles` (`status`, `deleted_at`)
+
 ---
 
 ## How to Import
@@ -69,6 +75,7 @@ File: [`phase_09_expenses.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/pha
    - 5th: `database/phase_05_payments.sql`
    - 6th: `database/phase_06_delivery.sql`
    - 7th: `database/phase_09_expenses.sql`
+   - 8th: `database/phase_10_staff_roles.sql`
 5. Click **Import**.
 
 ### Option 2: Using MySQL CLI
@@ -81,6 +88,7 @@ mysql -u root -p laundry_mgt < database/phase_04_orders.sql
 mysql -u root -p laundry_mgt < database/phase_05_payments.sql
 mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
 mysql -u root -p laundry_mgt < database/phase_09_expenses.sql
+mysql -u root -p laundry_mgt < database/phase_10_staff_roles.sql
 ```
 
 ---

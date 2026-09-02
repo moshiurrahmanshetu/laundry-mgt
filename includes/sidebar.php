@@ -15,6 +15,7 @@ $isCustomersActive  = str_contains($currentScript, 'customers');
 $isServicesActive   = str_contains($currentScript, 'services');
 $isReportsActive    = str_contains($currentScript, 'reports');
 $isProfileActive    = str_contains($currentScript, 'profile');
+$isStaffActive      = str_contains($currentScript, 'staff');
 ?>
 <nav id="sidebar">
     <!-- Brand Logo -->
@@ -151,17 +152,15 @@ $isProfileActive    = str_contains($currentScript, 'profile');
             </a>
         </li>
 
-        <!-- Staff & Roles (Phase 10) -->
+        <!-- Staff & Roles (Active in Phase 10) -->
         <li class="nav-item">
-            <a href="javascript:void(0);" 
-               class="nav-link disabled" 
-               aria-disabled="true"
+            <a href="<?= base_url('modules/staff/index.php') ?>" 
+               class="nav-link <?= $isStaffActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Staff & Roles (Phase 10)">
+               data-bs-title="Staff & Roles">
                 <i class="bi bi-shield-lock-fill"></i>
                 <span class="link-text">Staff &amp; Roles</span>
-                <span class="badge bg-secondary">Phase 10</span>
             </a>
         </li>
 
@@ -184,12 +183,12 @@ $isProfileActive    = str_contains($currentScript, 'profile');
     <div class="sidebar-footer">
         <img src="<?= e(user_avatar_url($currentUser['avatar'] ?? null)) ?>" 
              alt="User Avatar" 
-             class="navbar-user-avatar me-2 flex-shrink-0">
+             class="navbar-user-avatar">
         <div class="user-details overflow-hidden">
-            <div class="text-white text-truncate fw-semibold" style="font-size: 0.85rem;">
+            <div class="text-white text-truncate fw-semibold" style="font-size: 0.85rem;" title="<?= e($currentUser['name'] ?? 'User') ?>">
                 <?= e($currentUser['name'] ?? 'User') ?>
             </div>
-            <div class="text-muted text-truncate text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+            <div class="text-muted-500 text-truncate text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;" title="<?= e($currentUser['role_name'] ?? 'Staff') ?>">
                 <?= e($currentUser['role_name'] ?? 'Staff') ?>
             </div>
         </div>

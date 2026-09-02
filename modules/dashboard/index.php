@@ -232,7 +232,7 @@ require_once __DIR__ . '/../../includes/topbar.php';
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Phases 01 through 09 are active in production mode:
+                    Phases 01 through 10 are active in production mode:
                 </p>
                 <div class="row g-3 text-center">
                     <div class="col-6 col-md-4 col-lg-3">
@@ -299,10 +299,17 @@ require_once __DIR__ . '/../../includes/topbar.php';
                         </div>
                     </div>
                     <div class="col-6 col-md-4 col-lg-3">
-                        <div class="p-3 border rounded bg-light opacity-75">
-                            <span class="badge bg-secondary mb-2">Phase 10 (Next)</span>
-                            <div class="fw-bold text-muted small">Staff &amp; Roles</div>
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-success mb-2">Phase 10 (Active)</span>
+                            <div class="fw-bold text-dark small">Staff &amp; Roles</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Permissions, Access</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="p-3 border rounded bg-light opacity-75">
+                            <span class="badge bg-secondary mb-2">Phase 11 (Next)</span>
+                            <div class="fw-bold text-muted small">Settings</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Business &amp; System</small>
                         </div>
                     </div>
                 </div>
