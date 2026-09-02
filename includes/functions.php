@@ -615,10 +615,13 @@ function payment_status_badge(string $status): string {
  * Format currency price
  *
  * @param float|string|null $price
- * @param string $currency
+ * @param string|null $currency
  * @return string
  */
-function format_price(float|string|null $price, string $currency = '$'): string {
+function format_price(float|string|null $price, ?string $currency = null): string {
+    if ($currency === null) {
+        $currency = (string)get_setting('currency_symbol', '$');
+    }
     return $currency . number_format((float)($price ?? 0), 2);
 }
 
@@ -927,6 +930,141 @@ function role_badge(string $roleSlug, string $roleName): string {
         default         => '<span class="badge bg-secondary text-white border">' . e($roleName) . '</span>'
     };
 }
+
+/**
+ * In-memory runtime settings cache
+ * @var array<string, string|null>|null
+ */
+global $appSettingsCache;
+$appSettingsCache = null;
+
+/**
+ * Retrieve all settings from database with runtime in-memory caching
+ *
+ * @param bool $fresh
+ * @param PDO|null $pdo
+ * @return array<string, string|null>
+ */
+function get_all_settings(bool $fresh = false, ?PDO $pdo = null): array {
+    global $appSettingsCache;
+
+    if ($appSettingsCache !== null && !$fresh) {
+        return $appSettingsCache;
+    }
+
+    $appSettingsCache = [];
+
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    try {
+        $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
+        $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        if (is_array($rows)) {
+            $appSettingsCache = $rows;
+        }
+    } catch (PDOException $e) {
+        error_log('Failed to fetch settings: ' . $e->getMessage());
+    }
+
+    return $appSettingsCache;
+}
+
+/**
+ * Retrieve a specific setting value by key with optional fallback default
+ *
+ * @param string $key
+ * @param mixed $default
+ * @return mixed
+ */
+function get_setting(string $key, mixed $default = null): mixed {
+    $settings = get_all_settings();
+    return array_key_exists($key, $settings) && $settings[$key] !== null && $settings[$key] !== ''
+        ? $settings[$key]
+        : $default;
+}
+
+/**
+ * Save or update a setting in the database and refresh in-memory cache
+ *
+ * @param string $key
+ * @param mixed $value
+ * @param PDO|null $pdo
+ * @return bool
+ */
+function set_setting(string $key, mixed $value, ?PDO $pdo = null): bool {
+    global $appSettingsCache;
+
+    if ($pdo === null) {
+        $pdo = getDBConnection();
+    }
+
+    try {
+        $stmt = $pdo->prepare('
+            INSERT INTO settings (setting_key, setting_value, created_at, updated_at)
+            VALUES (:key, :val, NOW(), NOW())
+            ON DUPLICATE KEY UPDATE
+                setting_value = VALUES(setting_value),
+                updated_at = NOW()
+        ');
+        $strValue = $value !== null ? (string)$value : null;
+        $stmt->execute(['key' => $key, 'val' => $strValue]);
+
+        if ($appSettingsCache !== null) {
+            $appSettingsCache[$key] = $strValue;
+        }
+
+        return true;
+    } catch (PDOException $e) {
+        error_log("Failed to save setting '{$key}': " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get business logo URL with optional fallback
+ *
+ * @param string|null $logoFilename
+ * @return string|null
+ */
+function business_logo_url(?string $logoFilename = null): ?string {
+    if ($logoFilename === null) {
+        $logoFilename = get_setting('business_logo');
+    }
+
+    if (!empty($logoFilename)) {
+        $fullPath = LOGO_PATH . DIRECTORY_SEPARATOR . $logoFilename;
+        if (file_exists($fullPath)) {
+            return LOGO_URL . '/' . $logoFilename;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Format date using active system date format setting
+ *
+ * @param string|null $date
+ * @param string|null $format
+ * @return string
+ */
+function format_date(?string $date, ?string $format = null): string {
+    if (empty($date)) {
+        return '—';
+    }
+    if ($format === null) {
+        $format = (string)get_setting('date_format', 'd/m/Y');
+    }
+    try {
+        $dt = new DateTime($date);
+        return $dt->format($format);
+    } catch (Exception $e) {
+        return (string)$date;
+    }
+}
+
 
 
 

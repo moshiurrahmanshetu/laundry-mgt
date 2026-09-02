@@ -33,12 +33,19 @@ if (!defined('AVATAR_PATH')) {
     define('AVATAR_PATH', UPLOAD_PATH . DIRECTORY_SEPARATOR . 'avatars');
 }
 
+if (!defined('LOGO_PATH')) {
+    define('LOGO_PATH', UPLOAD_PATH . DIRECTORY_SEPARATOR . 'logos');
+}
+
 // Ensure upload directories exist
 if (!is_dir(UPLOAD_PATH)) {
     @mkdir(UPLOAD_PATH, 0755, true);
 }
 if (!is_dir(AVATAR_PATH)) {
     @mkdir(AVATAR_PATH, 0755, true);
+}
+if (!is_dir(LOGO_PATH)) {
+    @mkdir(LOGO_PATH, 0755, true);
 }
 
 /**
@@ -88,3 +95,8 @@ if (!defined('UPLOAD_URL')) {
 if (!defined('AVATAR_URL')) {
     define('AVATAR_URL', UPLOAD_URL . '/avatars');
 }
+
+if (!defined('LOGO_URL')) {
+    define('LOGO_URL', UPLOAD_URL . '/logos');
+}
+

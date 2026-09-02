@@ -1,4 +1,4 @@
-# Laundry Management System (`laundry-mgt`) — Phase 10
+# Laundry Management System (`laundry-mgt`) — Phase 11
 
 A lightweight, professional, and secure Laundry Management System CMS built with **Raw PHP 8+**, **MySQL (PDO)**, **Bootstrap 5**, and **Bootstrap Icons**.
 
@@ -6,7 +6,7 @@ A lightweight, professional, and secure Laundry Management System CMS built with
 
 ## 1. Project Purpose & Overview
 
-The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, operating business expenses, business reports, and staff & role permissions.
+The **Laundry Management System** is designed for commercial laundries, dry cleaners, and laundromats to manage operations, customer accounts, services & item pricing, order workflows, pickups, deliveries, invoices, multi-installment payments, operating business expenses, business reports, staff & role permissions, and full system configuration.
 
 ### Implemented Phases
 - **Phase 01: Foundation & Authentication System**
@@ -77,14 +77,22 @@ The **Laundry Management System** is designed for commercial laundries, dry clea
   - Expense Category Directory (`modules/expenses/categories.php`) with add, inline edit, active/inactive status toggle, and foreign-key delete protection.
   - Database Integrity & Soft Deletes: Expenses and Categories utilize soft deletion (`deleted_at IS NOT NULL`) with `ON DELETE RESTRICT` foreign keys preventing accidental deletion of referenced categories.
   - Printable Expense Payment Voucher (`modules/expenses/print.php`) with disbursement details and authorized signature boxes.
-- **Phase 10: Staff & Roles Management & Sidebar UI Fix (NEW)**
+- **Phase 10: Staff & Roles Management & Sidebar UI Fix**
   - Staff Accounts Directory (`modules/staff/index.php`) with metrics, search, role/status filters, and soft deletion.
   - Staff Intake & Editing (`modules/staff/create.php`, `edit.php`, `show.php`) with secure bcrypt password hashing, avatar upload, and immutable account integrity.
   - Role Assignment Bug Prevention: Form select elements and update statements strictly enforce correct `role_id` relational foreign keys without hardcoded role fallbacks.
   - Administrator Lockout Protection: Prevents deactivating, deleting, or reassigning the last active Administrator account.
   - Custom Role Management (`modules/staff/roles.php`): Role directory with add/edit/delete and system role protection (`administrator`, `manager`, `staff`).
-  - Granular Permissions Matrix (`modules/staff/role_permissions.php`): 22 module-level permissions across Customers, Services, Orders, Payments, Delivery, Operations, Reports, Expenses, Staff, and Roles.
+  - Granular Permissions Matrix (`modules/staff/role_permissions.php`): 22 module-level permissions across all system modules.
   - Sidebar User Profile UI Fix: Complete layout refactoring with scrollable navigation (`overflow-y: auto`) and fixed, non-clipped bottom user footer (`flex-shrink: 0`, min-height: 64px) for desktop, mobile, expanded, and collapsed sidebar states.
+- **Phase 11: Settings / System Configuration (NEW)**
+  - Dynamic System Configuration (`settings` key/value database table with unique key constraints).
+  - In-Memory Runtime Caching: `get_all_settings()`, `get_setting()`, and `set_setting()` helpers prevent redundant database queries per page execution.
+  - Business Profile Management (`modules/settings/index.php` Tab 1): Business Name, Phone, Email, Address, Website, Short Description, and Store Logo upload with safe replacement and removal options.
+  - General Preferences (`modules/settings/index.php` Tab 2): System Timezone (validated against `DateTimeZone::listIdentifiers()`), Date Display Format (`d/m/Y`, `m/d/Y`, `Y-m-d`, `d M Y`), Currency Code, and Currency Symbol.
+  - Invoice & Receipt Layout (`modules/settings/index.php` Tab 3): Customizable Invoice Prefix, Receipt Prefix, Printable Footer Terms, and Header Display Toggles (Show Logo, Show Address, Show Phone).
+  - Print Document Integration: Dynamic business branding in order receipts, payment vouchers, delivery slips, operations work orders, and expense vouchers.
+  - Financial Data Safety: Currency and formatting adjustments update presentation layers only without altering stored financial records or historical transactions.
 
 ---
 
@@ -132,7 +140,7 @@ laundry-mgt/
 ├── config/
 │   ├── config.php                 # Master configuration & session initialization
 │   ├── database.php               # Centralized PDO MySQL connection
-│   └── constants.php              # Application constants & dynamic Base URL
+│   └── constants.php              # Application constants & dynamic Base URL, Upload & Logo paths
 │
 ├── database/
 │   ├── phase_01_authentication.sql # Phase 01 roles, users, resets & audit logs schema
@@ -145,6 +153,7 @@ laundry-mgt/
 │   ├── phase_08_reports.sql       # Phase 08 reports & analytics documentation
 │   ├── phase_09_expenses.sql      # Phase 09 expense_categories & expenses schema
 │   ├── phase_10_staff_roles.sql   # Phase 10 permissions, role_permissions & schema updates
+│   ├── phase_11_settings.sql      # Phase 11 settings key/value schema & seed defaults
 │   └── README.md                  # Database import guide
 │
 ├── includes/
@@ -152,14 +161,18 @@ laundry-mgt/
 │   ├── guest_check.php            # Guest guard (redirects logged-in users to dashboard)
 │   ├── header.php                 # HTML Head, Bootstrap 5, Icons, custom CSS
 │   ├── footer.php                 # Footer layout, Bootstrap 5 JS & app.js
-│   ├── sidebar.php                # Collapsible sidebar with active Staff & Roles link
+│   ├── sidebar.php                # Collapsible sidebar with active Settings link
 │   ├── topbar.php                 # Top navigation bar & user profile menu
 │   ├── flash_message.php          # Session-based flash alerts renderer
-│   └── functions.php              # Global helpers (CSRF, permissions, status badges, numbering)
+│   └── functions.php              # Global helpers (CSRF, settings, permissions, formatting)
 │
 ├── modules/
 │   ├── dashboard/
 │   │   └── index.php              # Main Dashboard (User profile, operations, reports, expenses & metrics)
+│   │
+│   ├── settings/
+│   │   ├── index.php              # System settings tabbed dashboard (Profile, General, Invoice)
+│   │   └── save.php               # Settings update POST handler (Validation, logo upload, audit log)
 │   │
 │   ├── staff/
 │   │   ├── index.php              # Staff directory, filters, pagination, delete & status modals
@@ -235,7 +248,7 @@ laundry-mgt/
 │   │   ├── update.php             # Order update handler (Transaction-safe)
 │   │   ├── update_status.php      # Order lifecycle status transition handler
 │   │   ├── delete.php             # Soft delete handler (Admin/Manager only)
-│   │   ├── print.php              # Printable invoice/receipt
+│   │   ├── print.php              # Printable invoice/receipt with dynamic branding
 │   │   └── get_service_items.php  # Secure AJAX helper for cascading item dropdowns
 │   │
 │   ├── payments/
@@ -246,7 +259,7 @@ laundry-mgt/
 │   │   ├── edit.php               # Edit payment metadata (Admin only)
 │   │   ├── update.php             # Payment metadata update handler (Admin only)
 │   │   ├── delete.php             # Void payment handler (Admin only, restores order balance)
-│   │   └── print.php              # Printable payment receipt voucher
+│   │   └── print.php              # Printable payment receipt voucher with dynamic branding
 │   │
 │   ├── delivery/
 │   │   ├── index.php              # Pickup & delivery list with counters, search, filters & modals
@@ -268,6 +281,7 @@ laundry-mgt/
 │
 ├── uploads/
 │   ├── avatars/                   # Uploaded profile photos
+│   ├── logos/                     # Uploaded business store logos
 │   └── .htaccess                  # Disables PHP script execution in uploads
 │
 ├── .htaccess                      # Root security & directory browsing protection
@@ -290,13 +304,15 @@ laundry-mgt/
 8. `database/phase_08_reports.sql`
 9. `database/phase_09_expenses.sql`
 10. `database/phase_10_staff_roles.sql`
+11. `database/phase_11_settings.sql`
 
 ---
 
-## 6. Roles & Permissions (Phase 01 — 10)
+## 6. Roles & Permissions (Phase 01 — 11)
 
 | Module Action | Administrator | Manager | Staff |
 | :--- | :---: | :---: | :---: |
+| **System Settings (Business Profile, General, Invoice)** | **Yes** | **No (403)** | **No (403)** |
 | **Staff & Roles Management** | **Yes** | **No (403)** | **No (403)** |
 | **Manage Expenses (View, Add, Edit, Delete, Print)** | Yes | Yes | **No (403)** |
 | **Manage Expense Categories** | Yes | Yes | **No (403)** |
@@ -322,4 +338,4 @@ laundry-mgt/
 - **Phase 08 (Complete):** Reports & Analytics (Sales, Payments, Delivery, Customers, Services)
 - **Phase 09 (Complete):** Expense Management (Operating Expenses, Categories, Vouchers)
 - **Phase 10 (Complete):** Staff Management & Role Permissions (Staff Directory, Roles, Permissions, Lockout Protection)
-- **Phase 11:** System Settings & Equipment Management
+- **Phase 11 (Complete):** Settings / System Configuration (Business Profile, Logo Branding, Regional Defaults, Print Layouts)

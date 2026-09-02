@@ -16,6 +16,7 @@ $isServicesActive   = str_contains($currentScript, 'services');
 $isReportsActive    = str_contains($currentScript, 'reports');
 $isProfileActive    = str_contains($currentScript, 'profile');
 $isStaffActive      = str_contains($currentScript, 'staff');
+$isSettingsActive   = str_contains($currentScript, 'settings');
 ?>
 <nav id="sidebar">
     <!-- Brand Logo -->
@@ -164,17 +165,15 @@ $isStaffActive      = str_contains($currentScript, 'staff');
             </a>
         </li>
 
-        <!-- Settings (Phase 11) -->
+        <!-- Settings (Active in Phase 11) -->
         <li class="nav-item">
-            <a href="javascript:void(0);" 
-               class="nav-link disabled" 
-               aria-disabled="true"
+            <a href="<?= base_url('modules/settings/index.php') ?>" 
+               class="nav-link <?= $isSettingsActive ? 'active' : '' ?>"
                data-bs-toggle="tooltip" 
                data-bs-placement="right" 
-               data-bs-title="Settings (Phase 11)">
+               data-bs-title="System Settings">
                 <i class="bi bi-gear-fill"></i>
                 <span class="link-text">Settings</span>
-                <span class="badge bg-secondary">Phase 11</span>
             </a>
         </li>
     </ul>

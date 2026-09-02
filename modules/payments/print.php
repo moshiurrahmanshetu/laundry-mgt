@@ -35,13 +35,26 @@ if (!$payment) {
     set_flash_message('error', 'Payment not found.');
     redirect('modules/payments/index.php');
 }
+
+// Business Settings
+$bizName     = get_setting('business_name', APP_NAME);
+$bizPhone    = get_setting('business_phone', '');
+$bizEmail    = get_setting('business_email', '');
+$bizAddress  = get_setting('business_address', '');
+$bizDesc     = get_setting('business_description', 'Official Laundry Payment Voucher');
+$bizLogo     = get_setting('business_logo');
+$bizLogoUrl  = business_logo_url($bizLogo);
+$showLogo    = get_setting('show_business_logo', '1') === '1';
+$showAddress = get_setting('show_business_address', '1') === '1';
+$showPhone   = get_setting('show_business_phone', '1') === '1';
+$footerNote  = get_setting('invoice_footer', 'Thank you for choosing our laundry services! Please keep this receipt for laundry pickup.');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Receipt - <?= e($payment['payment_number']) ?> - <?= e(APP_NAME) ?></title>
+    <title>Payment Receipt - <?= e($payment['payment_number']) ?> - <?= e($bizName) ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -99,15 +112,30 @@ if (!$payment) {
         <div class="row align-items-center mb-4 pb-3 border-bottom">
             <div class="col-7">
                 <div class="d-flex align-items-center gap-2 mb-1">
-                    <i class="bi bi-droplet-half receipt-brand-icon"></i>
-                    <h1 class="h4 fw-bold text-dark mb-0"><?= e(APP_NAME) ?></h1>
+                    <?php if ($showLogo && $bizLogoUrl): ?>
+                        <img src="<?= e($bizLogoUrl) ?>" alt="Logo" style="max-height: 44px; max-width: 130px; object-fit: contain;">
+                    <?php else: ?>
+                        <i class="bi bi-droplet-half receipt-brand-icon"></i>
+                    <?php endif; ?>
+                    <h1 class="h4 fw-bold text-dark mb-0"><?= e($bizName) ?></h1>
                 </div>
-                <p class="text-muted small mb-0">Official Laundry Payment Voucher</p>
-                <p class="text-muted small mb-0">Phone: +880 1700 000000 | Email: support@laundrymgt.com</p>
+                <?php if (!empty($bizDesc)): ?>
+                    <p class="text-muted small mb-0"><?= e($bizDesc) ?></p>
+                <?php endif; ?>
+                <?php if ($showAddress && !empty($bizAddress)): ?>
+                    <p class="text-muted small mb-0"><?= e($bizAddress) ?></p>
+                <?php endif; ?>
+                <?php if ($showPhone && (!empty($bizPhone) || !empty($bizEmail))): ?>
+                    <p class="text-muted small mb-0">
+                        <?= !empty($bizPhone) ? 'Phone: ' . e($bizPhone) : '' ?>
+                        <?= (!empty($bizPhone) && !empty($bizEmail)) ? ' | ' : '' ?>
+                        <?= !empty($bizEmail) ? 'Email: ' . e($bizEmail) : '' ?>
+                    </p>
+                <?php endif; ?>
             </div>
             <div class="col-5 text-end">
                 <h2 class="h5 fw-bold text-primary mb-1 font-monospace"><?= e($payment['payment_number']) ?></h2>
-                <div class="small text-muted mb-1">Date: <strong><?= date('M d, Y', strtotime($payment['payment_date'])) ?></strong></div>
+                <div class="small text-muted mb-1">Date: <strong><?= e(format_date($payment['payment_date'])) ?></strong></div>
                 <div>
                     <?= payment_record_status_badge($payment['status']) ?>
                 </div>
@@ -181,8 +209,7 @@ if (!$payment) {
 
         <!-- Footer -->
         <div class="text-center pt-3 border-top text-muted small">
-            <p class="mb-1 fw-semibold text-dark">Thank you for your payment!</p>
-            <p class="mb-0">Please keep this payment receipt for your records.</p>
+            <p class="mb-1 fw-semibold text-dark"><?= nl2br(e($footerNote)) ?></p>
         </div>
     </div>
 

@@ -59,6 +59,12 @@ File: [`phase_10_staff_roles.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/
 - `role_permissions` — Relational role permissions mapping matrix
 - Safe non-destructive column additions on `users` (`deleted_at`) and `roles` (`status`, `deleted_at`)
 
+### Phase 11: Settings / System Configuration
+File: [`phase_11_settings.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/phase_11_settings.sql)
+- `settings` — Key/value system configuration table with unique key constraints
+- Dynamic seed configurations for Business Profile, General Preferences, and Invoice/Receipt formatting
+- Registration of `settings.view` and `settings.manage` permissions
+
 ---
 
 ## How to Import
@@ -76,6 +82,7 @@ File: [`phase_10_staff_roles.sql`](file:///c:/xampp/htdocs/laundry-mgt/database/
    - 6th: `database/phase_06_delivery.sql`
    - 7th: `database/phase_09_expenses.sql`
    - 8th: `database/phase_10_staff_roles.sql`
+   - 9th: `database/phase_11_settings.sql`
 5. Click **Import**.
 
 ### Option 2: Using MySQL CLI
@@ -89,6 +96,7 @@ mysql -u root -p laundry_mgt < database/phase_05_payments.sql
 mysql -u root -p laundry_mgt < database/phase_06_delivery.sql
 mysql -u root -p laundry_mgt < database/phase_09_expenses.sql
 mysql -u root -p laundry_mgt < database/phase_10_staff_roles.sql
+mysql -u root -p laundry_mgt < database/phase_11_settings.sql
 ```
 
 ---
